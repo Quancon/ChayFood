@@ -37,10 +37,37 @@ const NavLink = ({ href, children, className = '' }: NavLinkProps) => {
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const { totalItems } = useCart()
-  const { isAuthenticated, user, logout } = useAuth()
+  const { isAuthenticated, user, logout, isLoading, refreshAuthState } = useAuth()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin')
+  const [lastRefresh, setLastRefresh] = useState(Date.now())
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const isAdmin = user?.role === 'admin'
+  
+  // Try refreshing auth state on mount if we have a token but no user
+  useEffect(() => {
+    const checkAuthState = async () => {
+      // Kiểm tra nếu đang refresh, hoặc đã refresh gần đây, tránh lặp vô hạn
+      const now = Date.now();
+      if (isRefreshing || now - lastRefresh < 5000) {
+        return;
+      }
+      
+      const token = localStorage.getItem('authToken');
+      const shouldRefresh = token && !isAuthenticated && !isLoading;
+      
+      if (shouldRefresh) {
+        setIsRefreshing(true);
+        await refreshAuthState();
+        setLastRefresh(Date.now());
+        setIsRefreshing(false);
+      }
+    };
+    
+    checkAuthState();
+  }, [isAuthenticated, isLoading, refreshAuthState, lastRefresh, isRefreshing]);
   
   // Handle scroll effects
   useEffect(() => {
@@ -93,27 +120,40 @@ export default function Navbar() {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <NavLink href="/">Home</NavLink>
-              <NavLink href="/menu">Menu</NavLink>
-              <NavLink href="/order">Order Now</NavLink>
-              <NavLink href="/subscriptions">Meal Plans</NavLink>
-              <NavLink href="/about">About Us</NavLink>
+              {isAdmin ? (
+                <>
+                  <NavLink href="/admin/dashboard">Dashboard</NavLink>
+                  <NavLink href="/admin/orders">Manage Orders</NavLink>
+                  <NavLink href="/admin/menu">Manage Menu</NavLink>
+                  <NavLink href="/admin/users">Manage Users</NavLink>
+                </>
+              ) : (
+                <>
+                  <NavLink href="/">Trang chủ</NavLink>
+                  <NavLink href="/menu">Thực đơn</NavLink>
+                  <NavLink href="/order">Đặt hàng</NavLink>
+                  <NavLink href="/subscriptions">Đăng ký gói</NavLink>
+                  <NavLink href="/about">Giới thiệu</NavLink>
+                </>
+              )}
             </nav>
             
             {/* Right side buttons - desktop */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Cart button */}
-              <Link
-                href="/cart"
-                className="relative p-2 text-gray-700 hover:text-green-600 transition-colors"
-              >
-                <ShoppingCartIcon className="h-6 w-6" />
-                {totalItems > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
+              {/* Cart button - only show for regular users */}
+              {!isAdmin && (
+                <Link
+                  href="/cart"
+                  className="relative p-2 text-gray-700 hover:text-green-600 transition-colors"
+                >
+                  <ShoppingCartIcon className="h-6 w-6" />
+                  {totalItems > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">
+                      {totalItems}
+                    </span>
+                  )}
+                </Link>
+              )}
               
               {/* User account */}
               {isAuthenticated ? (
@@ -140,36 +180,74 @@ export default function Navbar() {
                         className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Link
-                          href="/account/profile"
-                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          Profile
-                        </Link>
-                        <Link
-                          href="/account/orders"
-                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          My Orders
-                        </Link>
-                        <Link
-                          href="/account/subscriptions"
-                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          My Subscriptions
-                        </Link>
+                        {isAdmin ? (
+                          // Admin menu items
+                          <>
+                            <Link
+                              href="/admin/dashboard"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              Dashboard
+                            </Link>
+                            <Link
+                              href="/admin/orders"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              Manage Orders
+                            </Link>
+                            <Link
+                              href="/admin/menu"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              Manage Menu
+                            </Link>
+                            <Link
+                              href="/admin/users"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              Manage Users
+                            </Link>
+                          </>
+                        ) : (
+                          // Regular user menu items
+                          <>
+                            <Link
+                              href="/account/profile"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              Profile
+                            </Link>
+                            <Link
+                              href="/account/orders"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              My Orders
+                            </Link>
+                            <Link
+                              href="/account/subscriptions"
+                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              My Subscriptions
+                            </Link>
+                          </>
+                        )}
+                        
                         <div className="border-t border-gray-100 my-1"></div>
                         <button
-                          className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
                           onClick={() => {
-                            logout();
-                            setShowUserMenu(false);
+                            setShowUserMenu(false)
+                            logout()
                           }}
+                          className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                         >
-                          Sign Out
+                          Logout
                         </button>
                       </motion.div>
                     )}
@@ -193,8 +271,19 @@ export default function Navbar() {
               )}
             </div>
             
-            {/* Mobile Navigation */}
-            <MobileNav />
+            {/* Hamburger Menu - Mobile */}
+            <div className="md:hidden">
+              <MobileNav 
+                isAuthenticated={isAuthenticated}
+                user={user}
+                cartItemCount={totalItems}
+                onSignIn={openSignIn}
+                onSignUp={openSignUp}
+                onLogout={async () => {
+                  await logout();
+                }}
+              />
+            </div>
           </div>
         </div>
       </header>

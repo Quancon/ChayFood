@@ -52,6 +52,20 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
     }
   }, [isOpen, onClose])
   
+  // Handle switch view events from forms
+  useEffect(() => {
+    const handleSwitchView = (e: Event) => {
+      const customEvent = e as CustomEvent<'signin' | 'signup'>
+      setView(customEvent.detail)
+    }
+    
+    window.addEventListener('switchAuthView', handleSwitchView as EventListener)
+    
+    return () => {
+      window.removeEventListener('switchAuthView', handleSwitchView as EventListener)
+    }
+  }, [])
+  
   return (
     <AnimatePresence>
       {isOpen && (
@@ -112,7 +126,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
               {/* Body */}
               <div className="p-6">
                 {view === 'signin' ? (
-                  <SignInForm onSuccess={onClose} onSignUpClick={() => setView('signup')} />
+                  <SignInForm />
                 ) : (
                   <SignUpForm onSuccess={onClose} onSignInClick={() => setView('signin')} />
                 )}

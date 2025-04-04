@@ -61,24 +61,33 @@ interface Order {
 }
 
 export default function OrdersPage() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'active' | 'completed'>('all');
+  const [showAuthMessage, setShowAuthMessage] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    
     const fetchOrders = async () => {
       try {
-        setLoading(true);
-        const response = await orderAPI.getMyOrders();
-        setOrders(response.data);
+        // Only fetch orders if user is authenticated and auth checking is complete
+        if (!authLoading && isAuthenticated) {
+          setLoading(true);
+          const response = await orderAPI.getMyOrders();
+          console.log('My orders response:', response);
+          
+          if (response && response.status === 'success' && Array.isArray(response.data)) {
+            setOrders(response.data);
+          } else {
+            console.error('Invalid order data structure:', response);
+            setError('Failed to load orders. Unexpected data format.');
+          }
+        } else if (!authLoading && !isAuthenticated) {
+          // If auth checking is complete and user is not authenticated
+          setShowAuthMessage(true);
+        }
       } catch (err) {
         console.error('Error fetching orders:', err);
         setError('Failed to load orders. Please try again.');
@@ -88,7 +97,7 @@ export default function OrdersPage() {
     };
 
     fetchOrders();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authLoading]);
 
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
@@ -101,11 +110,32 @@ export default function OrdersPage() {
     return true;
   });
 
-  if (loading) {
+  // Show loading state while authentication is being checked
+  if (authLoading || loading) {
     return (
       <div className="container mx-auto px-4 py-16 mt-16 text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mx-auto"></div>
         <p className="mt-4 text-gray-600">Loading your orders...</p>
+      </div>
+    );
+  }
+
+  // Show authentication message if user is not authenticated
+  if (showAuthMessage) {
+    return (
+      <div className="container mx-auto px-4 py-16 mt-16">
+        <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+          <p className="font-medium">Please sign in to view your orders</p>
+          <p className="mt-2">You need to be signed in to view your order history.</p>
+          <div className="mt-4 flex space-x-4">
+            <button
+              onClick={() => router.push('/')}
+              className="px-4 py-2 bg-white border border-gray-300 rounded shadow-sm text-gray-700 hover:bg-gray-50"
+            >
+              Return to Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

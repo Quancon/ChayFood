@@ -4,11 +4,12 @@ import { Inter } from 'next/font/google'
 import Navbar from './components/navbar'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
+import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'ChayFood - Vegan Food Delivery',
+  title: 'Chayfood - Vegan Food Delivery',
   description: 'Healthy and delicious vegan food delivered to your door',
 }
 
@@ -68,6 +69,7 @@ export default function RootLayout({
                 </div>
               </div>
             </footer>
+            <Toaster position="top-center" />
           </CartProvider>
         </AuthProvider>
       </body>
