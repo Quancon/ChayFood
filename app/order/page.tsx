@@ -1,307 +1,344 @@
-"use client"
-import { motion } from 'framer-motion'
-import { useState } from 'react'
-import Image from 'next/image'
+'use client';
 
-const mealPlans = [
-  {
-    id: 1,
-    name: "Gói Cơ bản",
-    price: "1.200.000đ",
-    duration: "1 tuần",
-    mealsPerDay: 2,
-    features: [
-      "2 bữa ăn mỗi ngày",
-      "Menu đa dạng",
-      "Giao hàng tận nơi",
-      "Hỗ trợ dinh dưỡng cơ bản"
-    ]
-  },
-  {
-    id: 2,
-    name: "Gói Nâng cao",
-    price: "2.100.000đ",
-    duration: "1 tuần",
-    mealsPerDay: 3,
-    features: [
-      "3 bữa ăn mỗi ngày",
-      "Menu cao cấp",
-      "Giao hàng tận nơi",
-      "Tư vấn dinh dưỡng",
-      "Thực đơn tùy chỉnh"
-    ],
-    recommended: true
-  },
-  {
-    id: 3,
-    name: "Gói Premium",
-    price: "2.800.000đ",
-    duration: "1 tuần",
-    mealsPerDay: 3,
-    features: [
-      "3 bữa ăn + 2 bữa phụ",
-      "Menu đặc biệt",
-      "Giao hàng ưu tiên",
-      "Tư vấn dinh dưỡng 1-1",
-      "Thực đơn hoàn toàn tùy chỉnh",
-      "Hỗ trợ 24/7"
-    ]
-  }
-]
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCart } from '../hooks/useCart';
+import { useAuth } from '../context/AuthContext';
+import { orderAPI, CreateOrderDto } from '../lib/api';
+import Image from 'next/image';
 
-const steps = ["Chọn gói", "Thông tin cá nhân", "Xác nhận"]
+export default function OrderPage() {
+  const { items, totalAmount, clearCart, isCartEmpty } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [orderCreated, setOrderCreated] = useState<{ orderId: string } | null>(null);
 
-export default function Order() {
-  const [currentStep, setCurrentStep] = useState(0)
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(null)
+  // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    note: ''
-  })
+    street: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    additionalInfo: '',
+    paymentMethod: 'cod' as 'cod' | 'card' | 'banking',
+    specialInstructions: ''
+  });
 
-  const handlePlanSelect = (planId: number) => {
-    setSelectedPlan(planId)
-  }
-
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(current => current + 1)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login?redirect=order');
+      return;
     }
-  }
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(current => current - 1)
+    if (isCartEmpty) {
+      router.push('/cart');
+      return;
     }
-  }
+  }, [isAuthenticated, isCartEmpty, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    handleNext()
-  }
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
-    }))
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Create order payload
+      const orderData: CreateOrderDto = {
+        items: items.map(item => ({
+          menuItem: item.menuItem._id,
+          quantity: item.quantity,
+          price: item.menuItem.price,
+          specialInstructions: item.specialInstructions
+        })),
+        totalAmount,
+        deliveryAddress: {
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          postalCode: formData.postalCode,
+          additionalInfo: formData.additionalInfo || undefined
+        },
+        paymentMethod: formData.paymentMethod,
+        specialInstructions: formData.specialInstructions || undefined
+      };
+
+      // Submit order
+      const response = await orderAPI.create(orderData);
+      setOrderCreated({ orderId: response.data._id });
+      setSuccess(true);
+      clearCart();
+    } catch (err) {
+      console.error('Error creating order:', err);
+      setError('Failed to create order. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (success && orderCreated) {
+    return (
+      <div className="container mx-auto px-4 py-16 mt-16">
+        <div className="max-w-lg mx-auto bg-white rounded-lg shadow-md p-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-green-100 rounded-full p-4 mb-4">
+              <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold mb-2">Order Placed Successfully!</h1>
+            <p className="text-gray-600 mb-6">
+              Thank you for your order. Your order has been received and is being processed.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4 w-full mb-6">
+              <p className="text-sm text-gray-600">Order ID: <span className="font-medium">{orderCreated.orderId}</span></p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 w-full">
+              <button
+                onClick={() => router.push(`/order/${orderCreated.orderId}`)}
+                className="flex-1 bg-green-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-600 transition-colors"
+              >
+                View Order Details
+              </button>
+              <button
+                onClick={() => router.push('/menu')}
+                className="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <main className="min-h-screen py-16">
-      <div className="container mx-auto px-4">
-        {/* Progress Steps */}
-        <div className="mb-12">
-          <div className="flex justify-center items-center space-x-4">
-            {steps.map((step, index) => (
-              <div key={step} className="flex items-center">
-                <div className={`
-                  w-8 h-8 rounded-full flex items-center justify-center
-                  ${index <= currentStep ? 'bg-primary text-white' : 'bg-gray-200 text-gray-600'}
-                `}>
-                  {index + 1}
-                </div>
-                {index < steps.length - 1 && (
-                  <div className={`w-24 h-1 mx-2 ${
-                    index < currentStep ? 'bg-primary' : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-center mt-4">
-            <p className="text-lg font-medium">{steps[currentStep]}</p>
-          </div>
-        </div>
-
-        {/* Step Content */}
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          className="max-w-4xl mx-auto"
-        >
-          {currentStep === 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {mealPlans.map(plan => (
-                <div
-                  key={plan.id}
-                  className={`
-                    relative p-6 rounded-lg border-2 cursor-pointer transition-all
-                    ${selectedPlan === plan.id
-                      ? 'border-primary shadow-lg'
-                      : 'border-gray-200 hover:border-primary'}
-                  `}
-                  onClick={() => handlePlanSelect(plan.id)}
-                >
-                  {plan.recommended && (
-                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                      <span className="bg-primary text-white text-sm px-3 py-1 rounded-full">
-                        Được đề xuất
-                      </span>
-                    </div>
-                  )}
-                  <h3 className="text-xl font-bold text-center mb-4">{plan.name}</h3>
-                  <p className="text-3xl font-bold text-primary text-center mb-4">
-                    {plan.price}
-                    <span className="text-sm text-gray-600 font-normal">/{plan.duration}</span>
-                  </p>
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-center text-gray-600">
-                        <svg className="w-5 h-5 text-primary mr-2" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+    <div className="container mx-auto px-4 py-16 mt-16">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <h1 className="text-3xl font-bold mb-8">Complete Your Order</h1>
+          
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+              {error}
             </div>
           )}
-
-          {currentStep === 1 && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Họ và tên
+          
+          <form onSubmit={handleSubmit}>
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Delivery Address</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <label htmlFor="street" className="block text-sm font-medium text-gray-700 mb-1">
+                    Street Address *
                   </label>
                   <input
                     type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    id="street"
+                    name="street"
+                    value={formData.street}
+                    onChange={handleInputChange}
                     required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                    City *
                   </label>
                   <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleInputChange}
                     required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
+                    State *
+                  </label>
+                  <input
+                    type="text"
+                    id="state"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">
+                    Postal Code *
+                  </label>
+                  <input
+                    type="text"
+                    id="postalCode"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label htmlFor="additionalInfo" className="block text-sm font-medium text-gray-700 mb-1">
+                    Additional Info (Apartment, Floor, etc.)
+                  </label>
+                  <input
+                    type="text"
+                    id="additionalInfo"
+                    name="additionalInfo"
+                    value={formData.additionalInfo}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   />
                 </div>
               </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  Số điện thoại
+            </div>
+            
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+              <div className="space-y-3">
+                <label className="flex items-center p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cod"
+                    checked={formData.paymentMethod === 'cod'}
+                    onChange={handleInputChange}
+                    className="h-5 w-5 text-green-500 focus:ring-green-500"
+                  />
+                  <div className="ml-3">
+                    <span className="block font-medium">Cash on Delivery</span>
+                    <span className="block text-sm text-gray-500">Pay when your order arrives</span>
+                  </div>
                 </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa chỉ giao hàng
+                
+                <label className="flex items-center p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="card"
+                    checked={formData.paymentMethod === 'card'}
+                    onChange={handleInputChange}
+                    className="h-5 w-5 text-green-500 focus:ring-green-500"
+                  />
+                  <div className="ml-3">
+                    <span className="block font-medium">Credit Card</span>
+                    <span className="block text-sm text-gray-500">Pay securely with your card</span>
+                  </div>
                 </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-2">
-                  Ghi chú
+                
+                <label className="flex items-center p-3 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="banking"
+                    checked={formData.paymentMethod === 'banking'}
+                    onChange={handleInputChange}
+                    className="h-5 w-5 text-green-500 focus:ring-green-500"
+                  />
+                  <div className="ml-3">
+                    <span className="block font-medium">Online Banking</span>
+                    <span className="block text-sm text-gray-500">Pay via bank transfer</span>
+                  </div>
                 </label>
-                <textarea
-                  id="note"
-                  name="note"
-                  value={formData.note}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                />
-              </div>
-            </form>
-          )}
-
-          {currentStep === 2 && (
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h3 className="text-2xl font-bold mb-6">Xác nhận đơn hàng</h3>
-              <div className="space-y-4">
-                <div className="flex justify-between py-4 border-b">
-                  <span className="font-medium">Gói đã chọn:</span>
-                  <span>{mealPlans.find(p => p.id === selectedPlan)?.name}</span>
-                </div>
-                <div className="flex justify-between py-4 border-b">
-                  <span className="font-medium">Giá:</span>
-                  <span className="text-primary font-bold">
-                    {mealPlans.find(p => p.id === selectedPlan)?.price}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <p className="font-medium">Thông tin giao hàng:</p>
-                  <p>{formData.name}</p>
-                  <p>{formData.phone}</p>
-                  <p>{formData.email}</p>
-                  <p>{formData.address}</p>
-                  {formData.note && (
-                    <div className="mt-4">
-                      <p className="font-medium">Ghi chú:</p>
-                      <p>{formData.note}</p>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
-          )}
-        </motion.div>
-
-        {/* Navigation Buttons */}
-        <div className="mt-8 flex justify-center space-x-4">
-          {currentStep > 0 && (
+            
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <h2 className="text-xl font-semibold mb-4">Special Instructions</h2>
+              <textarea
+                name="specialInstructions"
+                value={formData.specialInstructions}
+                onChange={handleInputChange}
+                rows={3}
+                placeholder="Any special instructions for delivery or food preparation..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+              ></textarea>
+            </div>
+            
             <button
-              onClick={handleBack}
-              className="btn btn-secondary"
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full py-3 px-6 rounded-lg font-semibold text-white ${
+                isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+              } transition-colors`}
             >
-              Quay lại
+              {isSubmitting ? (
+                <span className="flex items-center justify-center">
+                  <span className="animate-spin h-5 w-5 mr-3 border-t-2 border-b-2 border-white rounded-full" />
+                  Processing...
+                </span>
+              ) : (
+                'Place Order'
+              )}
             </button>
-          )}
-          {currentStep < steps.length - 1 ? (
-            <button
-              onClick={handleNext}
-              disabled={currentStep === 0 && !selectedPlan}
-              className="btn btn-primary"
-            >
-              Tiếp tục
-            </button>
-          ) : (
-            <button
-              onClick={() => console.log('Order submitted:', { selectedPlan, formData })}
-              className="btn btn-primary"
-            >
-              Xác nhận đặt hàng
-            </button>
-          )}
+          </form>
+        </div>
+        
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
+            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+            
+            <div className="max-h-80 overflow-y-auto mb-4">
+              {items.map((item, index) => (
+                <div key={index} className="flex py-3 border-b border-gray-100 last:border-0">
+                  {item.menuItem.image && (
+                    <div className="relative h-16 w-16 rounded overflow-hidden flex-shrink-0">
+                      <Image
+                        src={item.menuItem.image}
+                        alt={item.menuItem.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="flex-grow ml-4">
+                    <div className="flex justify-between">
+                      <h3 className="font-medium">{item.menuItem.name} × {item.quantity}</h3>
+                      <p className="text-gray-700">${(item.menuItem.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                    {item.specialInstructions && (
+                      <p className="text-sm text-gray-500 mt-1">Note: {item.specialInstructions}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="border-t pt-4">
+              <div className="flex justify-between mb-2">
+                <span>Subtotal</span>
+                <span>${totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span>Delivery Fee</span>
+                <span>$3.99</span>
+              </div>
+              <div className="flex justify-between font-bold mt-4">
+                <span>Total</span>
+                <span>${(totalAmount + 3.99).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </main>
-  )
+    </div>
+  );
 } 
