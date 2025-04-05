@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart as useCartContext } from '../context/CartContext';
-import { MenuItem } from '../lib/api';
+import { MenuItem } from '../lib/services/types';
 
 interface UseCartReturn {
   // Original cart context

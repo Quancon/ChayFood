@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../lib/api';
+import { authService } from '../lib/services';
 
 interface User {
   _id: string;
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Verify token with the API
-        const response = await authAPI.checkStatus();
+        const response = await authService.checkStatus();
         
         if (response.user) {
           setUser(response.user);
@@ -95,10 +95,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // If password is provided, this is an email/password login
       if (password) {
-        success = await authAPI.login(emailOrToken, password);
+        success = await authService.login(emailOrToken, password);
       } else {
         // This is a token login (from OAuth)
-        const result = await authAPI.loginWithToken(emailOrToken);
+        const result = await authService.loginWithToken(emailOrToken);
         success = result.success;
       }
       
@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       try {
         // Không tìm thấy trong cache, gọi API
-        const response = await authAPI.checkStatus();
+        const response = await authService.checkStatus();
         
         if (response.user) {
           setUser(response.user);
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
 
-      const response = await authAPI.checkStatus();
+      const response = await authService.checkStatus();
       
       if (response && response.user) {
         setUser(response.user);
@@ -199,7 +199,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      await authAPI.logout();
+      await authService.logout();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { orderAPI } from '../../lib/api';
+import { orderService } from '../../lib/services';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { CheckCircleIcon, XCircleIcon, TruckIcon, ClockIcon } from '@heroicons/react/24/outline';
@@ -148,7 +148,7 @@ export default function OrderDetailsPage() {
       
       try {
         setLoading(true);
-        const response = await orderAPI.getById(id);
+        const response = await orderService.getById(id);
         if (response && response.status === 'success' && response.data) {
           console.log('Order details:', response.data);
           console.log('Order status:', response.data.status);
@@ -178,9 +178,9 @@ export default function OrderDetailsPage() {
     try {
       setCancelLoading(true);
       
-      try {
+      try { 
         // Send cancellation with feedback
-        const response = await orderAPI.cancel(id, cancelFeedback);
+        const response = await orderService.cancel(id, cancelFeedback);
         console.log('Cancel order response:', response);
         
       
@@ -215,7 +215,7 @@ export default function OrderDetailsPage() {
       
       try {
         // Send cancellation with feedback
-        const response = await orderAPI.markAsReceived(id, receivedFeedback);
+        const response = await orderService.markAsReceived(id, receivedFeedback);
         console.log('Cancel order response:', response);
         
         // Success

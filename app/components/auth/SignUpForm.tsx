@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from 'react'
-import { useAuth } from '../../context/AuthContext'
+
 import axios from 'axios'
 import { useForm } from 'react-hook-form'
-import { authAPI } from '../../lib/api'
+import { authService } from '../../lib/services'
 
 interface SignUpFormProps {
   onSuccess: () => void
@@ -46,7 +46,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
     
     try {
       // Use the authAPI register method
-      const response = await authAPI.register({
+      const response = await authService.register({
         name: data.name,
         email: data.email,
         password: data.password

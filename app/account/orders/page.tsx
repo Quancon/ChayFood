@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
-import { orderAPI } from '../../lib/api';
+import { orderService } from '../../lib/services';
 import Link from 'next/link';
 
 // Status badge component
@@ -75,7 +75,7 @@ export default function OrdersPage() {
         // Only fetch orders if user is authenticated and auth checking is complete
         if (!authLoading && isAuthenticated) {
           setLoading(true);
-          const response = await orderAPI.getMyOrders();
+          const response = await orderService.getMyOrders();
           console.log('My orders response:', response);
           
           if (response && response.status === 'success' && Array.isArray(response.data)) {
