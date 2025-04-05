@@ -121,7 +121,7 @@ export default function MenuPage() {
       }
 
       // Nutrition filters
-      const { 
+  const { 
         calories: [minCal, maxCal], 
         protein: [minProtein, maxProtein],
         fat: [minFat, maxFat],
@@ -234,7 +234,7 @@ export default function MenuPage() {
             Discover our delicious selection of vegetarian dishes, crafted with care and quality ingredients
           </p>
         </div>
-      </div>
+          </div>
 
       {/* Search and Filter Section */}
       <div className="sticky top-16 z-10 bg-white/80 backdrop-blur-sm shadow-sm py-4 border-b">
@@ -252,9 +252,9 @@ export default function MenuPage() {
               {loading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-green-500" />
-                </div>
+          </div>
               )}
-            </div>
+          </div>
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2 border-green-400 text-green-500 hover:bg-green-50">
@@ -322,7 +322,7 @@ export default function MenuPage() {
                             className="border-green-100 focus-visible:ring-green-400"
                           />
                         </div>
-                      </div>
+                    </div>
                       <div>
                         <label className="text-sm text-green-600 mb-2 block">Protein (g)</label>
                         <div className="flex items-center gap-4">
@@ -349,7 +349,7 @@ export default function MenuPage() {
                             placeholder="Max"
                             className="border-green-100 focus-visible:ring-green-400"
                           />
-                        </div>
+                    </div>
                       </div>
                       <div>
                         <label className="text-sm text-green-600 mb-2 block">Fat (g)</label>
@@ -435,12 +435,12 @@ export default function MenuPage() {
                             className="bg-red-50 text-red-600 px-3 py-1 rounded-full text-sm flex items-center gap-2"
                           >
                             {ingredient}
-                            <button
+                    <button
                               onClick={() => handleRemoveIngredient(ingredient)}
                               className="hover:text-red-700"
                             >
                               ×
-                            </button>
+                    </button>
                           </div>
                         ))}
                       </div>

@@ -5,7 +5,7 @@ import Navbar from './components/navbar'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { Toaster } from 'react-hot-toast'
-
+import { ChatAgent } from '@/components/chat/chat-agent'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
@@ -70,6 +70,7 @@ export default function RootLayout({
               </div>
             </footer>
             <Toaster position="top-center" />
+            <ChatAgent />
           </CartProvider>
         </AuthProvider>
       </body>
