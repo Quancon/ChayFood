@@ -1,11 +1,13 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../../context/AuthContext'
+import { authService } from '../../lib/services/authService'
+import { setAuthToken } from '../../lib/actions/serverAuth'
 import Link from 'next/link'
 
-export default function AuthCallback() {
+function AuthCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { refreshAuthState } = useAuth()
@@ -39,8 +41,11 @@ export default function AuthCallback() {
           return
         }
 
-        // Store token in localStorage
-        localStorage.setItem('authToken', token);
+        // Lưu token vào localStorage (client-side)
+        await authService.loginWithToken(token);
+        
+        // Lưu token vào cookie (server-side) cho SSR
+        await setAuthToken(token);
         
         // Try to refresh auth state to get user info
         let isAdmin = false
@@ -54,7 +59,7 @@ export default function AuthCallback() {
         
         // Redirect admin users directly to dashboard, regular users to saved path or home
         const redirectPath = isAdmin 
-          ? '/admin/dashboard' 
+          ? '/admin' 
           : (localStorage.getItem('redirectAfterAuth') || '/')
         
         localStorage.removeItem('redirectAfterAuth')
@@ -113,5 +118,18 @@ export default function AuthCallback() {
       <div className="w-16 h-16 border-t-4 border-green-500 border-solid rounded-full animate-spin"></div>
       <p className="mt-4 text-lg text-gray-700">Redirecting you...</p>
     </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 border-t-4 border-green-500 border-solid rounded-full animate-spin"></div>
+        <p className="mt-4 text-lg text-gray-700">Loading...</p>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   )
 } 

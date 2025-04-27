@@ -35,6 +35,13 @@ const NavLink = ({ href, children, className = '' }: NavLinkProps) => {
 }
 
 export default function Navbar() {
+  const pathname = usePathname()
+  
+  // Hide navbar completely on admin pages
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
+  
   const [scrolled, setScrolled] = useState(false)
   const { totalItems } = useCart()
   const { isAuthenticated, user, logout, isLoading, refreshAuthState } = useAuth()

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -16,6 +16,7 @@ export default function SignInForm() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
+  const [redirectPath, setRedirectPath] = useState<string | null>(null)
   
   const form = useForm<FormValues>({
     defaultValues: {

@@ -1,6 +1,15 @@
 import api from './apiClient';
 
+// Helper to set auth cookie
+const setAuthCookie = (token: string) => {
+  // Set cookie that will be accessible by server components
+  if (typeof document !== 'undefined') {
+    document.cookie = `auth_token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+  }
+};
+
 export const authService = {
+  // Client-side methods
   // Biến lưu trữ thời gian gọi API cuối cùng
   _lastAuthCheck: 0,
   _isCheckingAuth: false,
@@ -58,6 +67,7 @@ export const authService = {
       if (response.data && response.data.token) {
         console.log('API: Login successful, storing token');
         localStorage.setItem('authToken', response.data.token);
+        setAuthCookie(response.data.token);
         
         if (response.data.user) {
           localStorage.setItem('currentUser', JSON.stringify(response.data.user));
@@ -76,6 +86,7 @@ export const authService = {
   
   loginWithToken: async (token: string) => {
     localStorage.setItem('authToken', token);
+    setAuthCookie(token);
     return { success: true };
   },
   
@@ -84,6 +95,7 @@ export const authService = {
       const response = await api.post('/auth/register', userData);
       if (response.data.token) {
         localStorage.setItem('authToken', response.data.token);
+        setAuthCookie(response.data.token);
       }
       return response.data;
     } catch (error) {
@@ -99,6 +111,10 @@ export const authService = {
       console.error('Error during logout:', error);
     } finally {
       localStorage.removeItem('authToken');
+      // Clear the auth cookie
+      if (typeof document !== 'undefined') {
+        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
       return { success: true };
     }
   },

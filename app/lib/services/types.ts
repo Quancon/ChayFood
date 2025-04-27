@@ -123,4 +123,34 @@ export interface CreateSubscriptionDto {
   };
   paymentMethod: 'card' | 'banking';
   specialInstructions?: string;
+}
+
+export interface Promotion {
+  _id: string;
+  name: string;
+  description: string;
+  code: string;
+  type: 'percentage' | 'fixed' | 'free_item' | 'free_delivery';
+  value: number;
+  minOrderValue?: number;
+  maxDiscount?: number;
+  isActive: boolean;
+  startDate: string;
+  endDate: string;
+  isFlashSale?: boolean;
+  flashSaleHours?: Array<{
+    dayOfWeek: number; // 0-6 for Sunday-Saturday
+    startHour: number; // 0-23
+    endHour: number; // 0-23
+  }>;
+  usageLimit?: number;
+  usageCount?: number;
+  isReferral?: boolean;
+  referralBonusPoints?: number;
+  notificationSent?: boolean;
+  totalCodes: number;
+  usedCodes: number;
+  promotionType: 'regular' | 'flash_sale';
+  createdAt?: string;
+  updatedAt?: string;
 } 

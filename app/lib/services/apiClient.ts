@@ -15,12 +15,12 @@ api.interceptors.request.use(
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken');
       if (token) {
-        if (!config.url?.includes('/auth/status')) {
+        if (!config.url?.includes('/api/auth/status')) {
           console.log('API: Adding token to request:', config.url);
         }
         config.headers.Authorization = `Bearer ${token}`;
         
-        if (!config.url?.includes('/auth/status')) {
+        if (!config.url?.includes('/api/auth/status')) {
           try {
             const tokenParts = token.split('.');
             if (tokenParts.length === 3) {
@@ -35,7 +35,7 @@ api.interceptors.request.use(
           }
         }
       } else {
-        if (!config.url?.includes('/auth/status')) {
+        if (!config.url?.includes('/api/auth/status')) {
           console.log('API: No token found for request:', config.url);
         }
       }
