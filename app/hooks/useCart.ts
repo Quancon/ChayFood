@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart as useCartContext } from '../context/CartContext';
 import { MenuItem } from '../lib/services/types';
+import { useAuth } from '../context/AuthContext';
 
 interface UseCartReturn {
   // Original cart context
@@ -14,6 +15,8 @@ interface UseCartReturn {
   updateItem: ReturnType<typeof useCartContext>['updateItem'];
   removeItem: ReturnType<typeof useCartContext>['removeItem'];
   clearCart: ReturnType<typeof useCartContext>['clearCart'];
+  refresh: ReturnType<typeof useCartContext>['refresh'];
+  error: ReturnType<typeof useCartContext>['error'];
   
   // Enhanced functionality
   isCartEmpty: boolean;
@@ -31,70 +34,185 @@ interface UseCartReturn {
 export function useCart(): UseCartReturn {
   const router = useRouter();
   const cartContext = useCartContext();
+  const { isAuthenticated } = useAuth();
   const [message, setMessage] = useState<string | null>(null);
   const [messageTimeout, setMessageTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Debug current state
+  useEffect(() => {
+    console.log("useCart state:", {
+      hasMessage: message !== null || error !== null,
+      message: error || message,
+      isAuthenticated,
+      cartItems: cartContext.items?.length || 0,
+      itemsData: cartContext.items
+    });
+  }, [message, error, isAuthenticated, cartContext.items]);
+
+  // Load cart data on mount and after auth state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      cartContext.refresh();
+    }
+  }, [isAuthenticated]);
 
   // Check if an item is in the cart
   const isItemInCart = (itemId: string): boolean => {
-    return cartContext.items.some(item => item.menuItem._id === itemId);
+    return cartContext.items?.some(item => item.menuItem._id === itemId) || false;
   };
 
   // Get quantity of an item
   const getItemQuantity = (itemId: string): number => {
-    const item = cartContext.items.find(item => item.menuItem._id === itemId);
+    const item = cartContext.items?.find(item => item.menuItem._id === itemId);
     return item ? item.quantity : 0;
   };
 
   // Add item with feedback message
-  const addToCartWithMessage = (item: MenuItem, quantity: number, specialInstructions?: string) => {
-    cartContext.addItem(item, quantity, specialInstructions);
+  const addToCartWithMessage = async (item: MenuItem, quantity: number, specialInstructions?: string) => {
+    console.log("addToCartWithMessage called", { item, quantity, isAuthenticated });
     
-    // Clear any existing timeout
+    // Clear previous messages
+    setError(null);
+    setMessage(null);
+    
     if (messageTimeout) {
       clearTimeout(messageTimeout);
+      setMessageTimeout(null);
     }
     
-    // Set success message
-    setMessage(`${item.name} added to cart`);
+    // Set a message immediately to ensure we always have some feedback
+    if (!isAuthenticated) {
+      setError("Vui lòng đăng nhập để thêm vào giỏ hàng");
+      console.log("Error set: authentication required");
+      return;
+    }
     
-    // Clear message after 3 seconds
-    const timeout = setTimeout(() => {
-      setMessage(null);
-    }, 3000);
+    // Set a temporary processing message
+    setMessage("Đang thêm vào giỏ hàng...");
     
-    setMessageTimeout(timeout);
+    try {
+      await cartContext.addItem(item, quantity, specialInstructions);
+      
+      // Check if there was an error from the context
+      if (cartContext.error) {
+        setMessage(null); // Clear the processing message
+        setError(cartContext.error);
+        console.log("Error from context:", cartContext.error);
+        return;
+      }
+      
+      // Set success message
+      setMessage(`Đã thêm ${item.name} vào giỏ hàng`);
+      console.log("Success message set:", `Đã thêm ${item.name} vào giỏ hàng`);
+      
+    } catch (err) {
+      setMessage(null); // Clear the processing message
+      setError("Không thể thêm vào giỏ hàng. Vui lòng thử lại.");
+      console.log("Error caught:", err);
+    }
   };
+  
+  // Clear messages after 3 seconds
+  useEffect(() => {
+    if (message || error) {
+      const timeout = setTimeout(() => {
+        if (message) setMessage(null);
+        if (error) setError(null);
+      }, 3000);
+      
+      setMessageTimeout(timeout);
+      return () => clearTimeout(timeout);
+    }
+  }, [message, error]);
 
   // Increase quantity of an item by 1
   const increaseQuantity = (itemId: string) => {
-    const item = cartContext.items.find(item => item.menuItem._id === itemId);
-    if (item) {
-      cartContext.updateItem(itemId, item.quantity + 1);
+    // First try to find by cart item _id
+    let cartItem = cartContext.items?.find(item => item._id === itemId);
+    
+    // If not found, try to find by menuItem._id (backward compatibility)
+    if (!cartItem) {
+      cartItem = cartContext.items?.find(item => item.menuItem._id === itemId);
+    }
+    
+    if (cartItem) {
+      // If found by cart item _id, use that
+      const idToUse = cartItem._id || itemId;
+      cartContext.updateItem(idToUse, cartItem.quantity + 1);
+      console.log(`Increasing quantity for item ID: ${idToUse}`);
+    } else {
+      console.error(`Could not find cart item with ID: ${itemId}`);
     }
   };
 
   // Decrease quantity of an item by 1
   const decreaseQuantity = (itemId: string) => {
-    const item = cartContext.items.find(item => item.menuItem._id === itemId);
-    if (item) {
-      if (item.quantity > 1) {
-        cartContext.updateItem(itemId, item.quantity - 1);
+    // First try to find by cart item _id
+    let cartItem = cartContext.items?.find(item => item._id === itemId);
+    
+    // If not found, try to find by menuItem._id (backward compatibility)
+    if (!cartItem) {
+      cartItem = cartContext.items?.find(item => item.menuItem._id === itemId);
+    }
+    
+    if (cartItem) {
+      // If found by cart item _id, use that
+      const idToUse = cartItem._id || itemId;
+      
+      if (cartItem.quantity > 1) {
+        cartContext.updateItem(idToUse, cartItem.quantity - 1);
+        console.log(`Decreasing quantity for item ID: ${idToUse}`);
       } else {
-        cartContext.removeItem(itemId);
+        cartContext.removeItem(idToUse);
+        console.log(`Removing item with ID: ${idToUse} (quantity would be 0)`);
+      }
+    } else {
+      console.error(`Could not find cart item with ID: ${itemId}`);
+    }
+  };
+
+  // Remove item
+  const removeItem = (itemId: string) => {
+    // First check if this is a cart item ID
+    const isCartItemId = cartContext.items?.some(item => item._id === itemId);
+    
+    // If it's a cart item ID, use it directly
+    if (isCartItemId) {
+      cartContext.removeItem(itemId);
+      console.log(`Removing cart item with ID: ${itemId}`);
+    } else {
+      // Otherwise, find the cart item that contains this menu item ID
+      const cartItem = cartContext.items?.find(item => item.menuItem._id === itemId);
+      if (cartItem && cartItem._id) {
+        cartContext.removeItem(cartItem._id);
+        console.log(`Removing cart item with ID: ${cartItem._id} (found by menuItem ID: ${itemId})`);
+      } else {
+        console.error(`Could not find cart item containing menuItem with ID: ${itemId}`);
       }
     }
   };
 
   // Navigate to checkout
   const proceedToCheckout = () => {
-    router.push('/order');
+    if (!isAuthenticated) {
+      setError("Vui lòng đăng nhập để tiếp tục thanh toán");
+      const timeout = setTimeout(() => {
+        setError(null);
+      }, 3000);
+      setMessageTimeout(timeout);
+      return;
+    }
+    router.push('/checkout');
   };
 
   // Dismiss message
   const dismissMessage = () => {
     setMessage(null);
+    setError(null);
     if (messageTimeout) {
       clearTimeout(messageTimeout);
+      setMessageTimeout(null);
     }
   };
 
@@ -103,15 +221,15 @@ export function useCart(): UseCartReturn {
     ...cartContext,
     
     // Enhanced functionality
-    isCartEmpty: cartContext.items.length === 0,
+    isCartEmpty: !cartContext.items || cartContext.items.length === 0,
     isItemInCart,
     getItemQuantity,
     addToCartWithMessage,
     increaseQuantity,
     decreaseQuantity,
     proceedToCheckout,
-    hasMessage: message !== null,
-    message,
+    hasMessage: message !== null || error !== null,
+    message: error || message,
     dismissMessage
   };
 }

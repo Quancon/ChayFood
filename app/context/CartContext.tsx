@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { MenuItem } from '../lib/services/types';
 import { CartItem } from '../lib/actions/cartActions';
 import { 
@@ -22,6 +22,7 @@ interface CartContextType {
   clearCart: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
+  refresh: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -31,56 +32,49 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { isAuthenticated, user } = useAuth();
+  const lastFetchTimeRef = useRef<number>(0);
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Lấy giỏ hàng từ server nếu đã đăng nhập, hoặc từ localStorage nếu chưa đăng nhập
+  // Lấy giỏ hàng từ server
   const fetchCart = async () => {
+    // Prevent multiple fetches within 500ms
+    const now = Date.now();
+    if (now - lastFetchTimeRef.current < 500) {
+      console.log('Skipping duplicate fetch, already fetched recently');
+      return;
+    }
+    
+    if (!isAuthenticated) {
+      // Reset state if not authenticated
+      setItems([]);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
+    lastFetchTimeRef.current = now;
     
     try {
-      if (isAuthenticated) {
-        // Lấy giỏ hàng từ server nếu đã đăng nhập
-        const response = await getCart();
-        if (response.success) {
-          setItems(response.items);
-        } else {
-          // Fallback to local storage if API fails
-          loadFromLocalStorage();
-        }
+      const response = await getCart();
+      console.log("Fetched cart data:", response);
+      if (response.success) {
+        setItems(response.items || []);
       } else {
-        // Dùng giỏ hàng từ localStorage nếu chưa đăng nhập
-        loadFromLocalStorage();
+        setError(response.message || 'Failed to fetch cart');
+        setItems([]);
       }
     } catch (error) {
       console.error('Error fetching cart:', error);
       setError('Failed to load cart');
-      // Fallback to localStorage
-      loadFromLocalStorage();
+      setItems([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Load từ localStorage
-  const loadFromLocalStorage = () => {
-    if (typeof window !== 'undefined') {
-      const storedCart = localStorage.getItem('cart');
-      if (storedCart) {
-        try {
-          setItems(JSON.parse(storedCart));
-        } catch (error) {
-          console.error('Failed to parse cart data:', error);
-          localStorage.removeItem('cart');
-        }
-      }
-    }
-  };
-
-  // Lưu vào localStorage (chỉ khi chưa đăng nhập)
-  const saveToLocalStorage = (cartItems: CartItem[]) => {
-    if (typeof window !== 'undefined' && !isAuthenticated) {
-      localStorage.setItem('cart', JSON.stringify(cartItems));
-    }
+  // Add a refresh function that can be called from outside
+  const refresh = async () => {
+    await fetchCart();
   };
 
   // Load cart khi component mount và khi auth state thay đổi
@@ -88,54 +82,53 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     fetchCart();
   }, [isAuthenticated, user]);
 
+  // Forced refresh on window focus to keep cart in sync
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isAuthenticated) {
+      const handleFocus = () => {
+        console.log('Window focused, refreshing cart');
+        fetchCart();
+      };
+      
+      window.addEventListener('focus', handleFocus);
+      
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+      };
+    }
+  }, [isAuthenticated]);
+
   // Add single item to cart
   const addItem = async (menuItem: MenuItem, quantity: number, specialInstructions?: string) => {
     setError(null);
     
+    if (!isAuthenticated) {
+      setError('Please log in to add items to cart');
+      return;
+    }
+    
     try {
-      if (isAuthenticated) {
-        // Thêm vào giỏ hàng trên server
-        setIsLoading(true);
-        const response = await addToCartAction(menuItem, quantity, specialInstructions);
-        
-        if (response.success) {
+      setIsLoading(true);
+      console.log("Calling addToCartAction with:", { menuItem, quantity });
+      
+      const response = await addToCartAction(menuItem, quantity, specialInstructions);
+      console.log("addToCartAction response:", response);
+      
+      if (response.success) {
+        if ('items' in response && Array.isArray(response.items)) {
           setItems(response.items);
         } else {
-          setError(response.message || 'Failed to add item to cart');
+          await fetchCart();
         }
       } else {
-        // Thêm vào localStorage nếu chưa đăng nhập
-        setItems(prevItems => {
-          // Check if item already exists
-          const existingItemIndex = prevItems.findIndex(item => 
-            item.menuItem._id === menuItem._id
-          );
-          
-          let updatedItems;
-          if (existingItemIndex >= 0) {
-            // Update quantity if item exists
-            updatedItems = [...prevItems];
-            updatedItems[existingItemIndex] = {
-              ...updatedItems[existingItemIndex],
-              quantity: updatedItems[existingItemIndex].quantity + quantity,
-              specialInstructions: specialInstructions || updatedItems[existingItemIndex].specialInstructions
-            };
-          } else {
-            // Add new item if it doesn't exist
-            updatedItems = [...prevItems, { 
-              menuItem, 
-              quantity, 
-              specialInstructions
-            }];
-          }
-          
-          saveToLocalStorage(updatedItems);
-          return updatedItems;
-        });
+        console.error("addToCartAction failed:", response.message);
+        setError(response.message || 'Failed to add item to cart');
+        await fetchCart();
       }
     } catch (error) {
       console.error('Error adding item to cart:', error);
       setError('Failed to add item to cart');
+      await fetchCart();
     } finally {
       setIsLoading(false);
     }
@@ -143,46 +136,39 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Update item in cart
   const updateItem = async (itemId: string, quantity: number, specialInstructions?: string) => {
+    if (!isAuthenticated) {
+      setError('Please log in to update cart');
+      return;
+    }
+    
     setError(null);
     
     try {
       if (quantity <= 0) {
-        // Nếu số lượng <= 0, xóa sản phẩm
         await removeItem(itemId);
         return;
       }
       
-      if (isAuthenticated) {
-        // Cập nhật giỏ hàng trên server
-        setIsLoading(true);
-        const response = await updateCartItemAction(itemId, quantity, specialInstructions);
-        
-        if (response.success) {
+      setIsLoading(true);
+      console.log(`Updating cart item with ID: ${itemId} to quantity: ${quantity}`);
+      
+      const response = await updateCartItemAction(itemId, quantity, specialInstructions);
+      console.log("updateCartItem response:", response);
+      
+      if (response.success) {
+        if ('items' in response && Array.isArray(response.items)) {
           setItems(response.items);
         } else {
-          setError(response.message || 'Failed to update cart item');
+          await fetchCart();
         }
       } else {
-        // Cập nhật trong localStorage nếu chưa đăng nhập
-        setItems(prevItems => {
-          const updatedItems = prevItems.map(item => {
-            if (item.menuItem._id === itemId) {
-              return {
-                ...item,
-                quantity,
-                specialInstructions: specialInstructions !== undefined ? specialInstructions : item.specialInstructions
-              };
-            }
-            return item;
-          });
-          
-          saveToLocalStorage(updatedItems);
-          return updatedItems;
-        });
+        setError(response.message || 'Failed to update cart item');
+        await fetchCart();
       }
     } catch (error) {
       console.error('Error updating cart item:', error);
       setError('Failed to update cart item');
+      await fetchCart();
     } finally {
       setIsLoading(false);
     }
@@ -190,36 +176,34 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Remove item from cart
   const removeItem = async (itemId: string) => {
+    if (!isAuthenticated) {
+      setError('Please log in to remove items');
+      return;
+    }
+    
     setError(null);
     
     try {
-      if (isAuthenticated) {
-        // Xóa khỏi giỏ hàng trên server
-        setIsLoading(true);
-        const response = await removeFromCartAction(itemId);
-        
-        if (response.success) {
+      setIsLoading(true);
+      console.log(`Removing cart item with ID: ${itemId}`);
+      
+      const response = await removeFromCartAction(itemId);
+      console.log("removeFromCart response:", response);
+      
+      if (response.success) {
+        if ('items' in response && Array.isArray(response.items)) {
           setItems(response.items);
         } else {
-          setError(response.message || 'Failed to remove item from cart');
+          await fetchCart();
         }
       } else {
-        // Xóa khỏi localStorage nếu chưa đăng nhập
-        setItems(prevItems => {
-          const updatedItems = prevItems.filter(item => item.menuItem._id !== itemId);
-          
-          if (updatedItems.length === 0) {
-            localStorage.removeItem('cart');
-          } else {
-            saveToLocalStorage(updatedItems);
-          }
-          
-          return updatedItems;
-        });
+        setError(response.message || 'Failed to remove item from cart');
+        await fetchCart();
       }
     } catch (error) {
       console.error('Error removing item from cart:', error);
       setError('Failed to remove item from cart');
+      await fetchCart();
     } finally {
       setIsLoading(false);
     }
@@ -227,23 +211,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   // Clear cart
   const clearCart = async () => {
+    if (!isAuthenticated) {
+      setError('Please log in to clear cart');
+      return;
+    }
+    
     setError(null);
     
     try {
-      if (isAuthenticated) {
-        // Xóa giỏ hàng trên server
-        setIsLoading(true);
-        const response = await clearCartAction();
-        
-        if (response.success) {
-          setItems([]);
-        } else {
-          setError(response.message || 'Failed to clear cart');
-        }
-      } else {
-        // Xóa trong localStorage nếu chưa đăng nhập
+      setIsLoading(true);
+      const response = await clearCartAction();
+      
+      if (response.success) {
         setItems([]);
-        localStorage.removeItem('cart');
+      } else {
+        setError(response.message || 'Failed to clear cart');
+        await fetchCart();
       }
     } catch (error) {
       console.error('Error clearing cart:', error);
@@ -254,8 +237,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Calculate totals
-  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
-  const totalAmount = items.reduce((total, item) => total + (item.menuItem.price * item.quantity), 0);
+  const totalItems = Array.isArray(items) 
+    ? items.reduce((total, item) => total + (item.quantity || 0), 0)
+    : 0;
+  
+  // Log detailed cart info for debugging
+  useEffect(() => {
+    if (items && items.length > 0) {
+      console.log('Cart Items Detail:', items);
+      console.log('First item structure:', JSON.stringify(items[0], null, 2));
+      console.log('Total Items:', totalItems);
+    }
+  }, [items]);
+    
+  const totalAmount = Array.isArray(items) 
+    ? items.reduce((total, item) => {
+        const price = item.menuItem && typeof item.menuItem.price === 'number' ? item.menuItem.price : 0;
+        const quantity = typeof item.quantity === 'number' ? item.quantity : 0;
+        return total + (price * quantity);
+      }, 0)
+    : 0;
 
   const value = {
     items,
@@ -266,7 +267,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     removeItem,
     clearCart,
     isLoading,
-    error
+    error,
+    refresh
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
