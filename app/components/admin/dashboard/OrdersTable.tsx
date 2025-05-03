@@ -23,6 +23,8 @@ const statusColors = {
   cancelled: 'bg-red-100 text-red-800',
 };
 
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export default function OrdersTable() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,66 +33,23 @@ export default function OrdersTable() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // In a real implementation, you would fetch data from your API
-        // For now, we'll use mock data
-        // const response = await axios.get('/api/admin/recent-orders');
-        // setOrders(response.data);
+        console.log('Fetching recent orders from API');
+        const response = await axios.get(`${BASE_API_URL}/api/admin/recent-orders`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
         
-        // Mock data
-        const mockData: Order[] = [
-          { 
-            id: 'ORD123456', 
-            customerName: 'Nguyen Van A', 
-            date: '2023-06-15T08:30:00Z', 
-            totalAmount: 235000, 
-            status: 'delivered',
-            items: 3,
-            paymentMethod: 'card'
-          },
-          { 
-            id: 'ORD123457', 
-            customerName: 'Tran Thi B', 
-            date: '2023-06-15T09:15:00Z', 
-            totalAmount: 185000, 
-            status: 'preparing',
-            items: 2,
-            paymentMethod: 'cod'
-          },
-          { 
-            id: 'ORD123458', 
-            customerName: 'Le Van C', 
-            date: '2023-06-15T10:20:00Z', 
-            totalAmount: 320000, 
-            status: 'confirmed',
-            items: 4,
-            paymentMethod: 'banking'
-          },
-          { 
-            id: 'ORD123459', 
-            customerName: 'Pham Thi D', 
-            date: '2023-06-15T11:05:00Z', 
-            totalAmount: 145000, 
-            status: 'pending',
-            items: 2,
-            paymentMethod: 'cod'
-          },
-          { 
-            id: 'ORD123460', 
-            customerName: 'Hoang Van E', 
-            date: '2023-06-15T11:45:00Z', 
-            totalAmount: 280000, 
-            status: 'cancelled',
-            items: 3,
-            paymentMethod: 'card'
-          },
-        ];
+        const apiData = response.data.data || response.data;
+        console.log('API response:', apiData);
         
-        setOrders(mockData);
+        setOrders(apiData);
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching recent orders:', err);
-        setError('Failed to load recent orders');
+        setError(err.message || 'Failed to load recent orders');
         setLoading(false);
+        setOrders([]);
       }
     };
 
@@ -102,7 +61,11 @@ export default function OrdersTable() {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+
+  if (orders.length === 0) {
+    return <div className="flex justify-center items-center h-48">No recent orders available</div>;
   }
 
   // Format date

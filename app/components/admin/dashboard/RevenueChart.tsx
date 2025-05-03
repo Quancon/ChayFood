@@ -8,6 +8,8 @@ type DataPoint = {
   revenue: number;
 };
 
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export default function RevenueChart() {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,28 +18,32 @@ export default function RevenueChart() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // In a real implementation, you would fetch data from your API
-        // For now, we'll use mock data
-        // const response = await axios.get('/api/admin/revenue');
-        // setData(response.data);
+        console.log('Fetching revenue data from API');
+        const response = await axios.get(`${BASE_API_URL}/api/analytics/orders/trends`, {
+          params: { timeRange: 'week' },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
         
-        // Mock data
-        const mockData: DataPoint[] = [
-          { date: 'Mon', revenue: 1250000 },
-          { date: 'Tue', revenue: 1120000 },
-          { date: 'Wed', revenue: 1450000 },
-          { date: 'Thu', revenue: 1680000 },
-          { date: 'Fri', revenue: 2100000 },
-          { date: 'Sat', revenue: 1890000 },
-          { date: 'Sun', revenue: 1350000 },
-        ];
+        // Process API data
+        const apiData = response.data.data || response.data;
+        console.log('API response:', apiData);
         
-        setData(mockData);
+        const processedData = apiData.map((item: any) => ({
+          date: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
+          revenue: item.revenue
+        }));
+        
+        setData(processedData);
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching revenue data:', err);
-        setError('Failed to load revenue data');
+        setError(err.message || 'Failed to load revenue data');
         setLoading(false);
+        
+        // Fallback to empty data instead of mock data
+        setData([]);
       }
     };
 
@@ -49,7 +55,11 @@ export default function RevenueChart() {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+  
+  if (data.length === 0) {
+    return <div className="flex justify-center items-center h-full">No revenue data available</div>;
   }
 
   const maxRevenue = Math.max(...data.map(item => item.revenue));

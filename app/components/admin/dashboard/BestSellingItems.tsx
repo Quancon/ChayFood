@@ -8,10 +8,12 @@ type MenuItem = {
   id: string;
   name: string;
   image: string;
-  price: number;
-  orderCount: number;
-  category: string;
+  count: number;
+  revenue: number;
+  category?: string;
 };
+
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function BestSellingItems() {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -21,61 +23,33 @@ export default function BestSellingItems() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // In a real implementation, you would fetch data from your API
-        // For now, we'll use mock data
-        // const response = await axios.get('/api/admin/best-selling');
-        // setItems(response.data);
+        console.log('Fetching popular dishes data from API');
+        const response = await axios.get(`${BASE_API_URL}/api/analytics/dishes/popular`, {
+          params: { timeRange: 'month' },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
         
-        // Mock data
-        const mockData: MenuItem[] = [
-          { 
-            id: '1', 
-            name: 'Vegan Pho', 
-            image: '/menu/vegan-pho.jpg', 
-            price: 98000, 
-            orderCount: 142,
-            category: 'main'
-          },
-          { 
-            id: '2', 
-            name: 'Tofu Rice Bowl', 
-            image: '/menu/tofu-rice.jpg', 
-            price: 85000, 
-            orderCount: 128,
-            category: 'main'
-          },
-          { 
-            id: '3', 
-            name: 'Mushroom Spring Rolls', 
-            image: '/menu/spring-rolls.jpg', 
-            price: 65000, 
-            orderCount: 112,
-            category: 'side'
-          },
-          { 
-            id: '4', 
-            name: 'Coconut Smoothie', 
-            image: '/menu/coconut-smoothie.jpg', 
-            price: 45000, 
-            orderCount: 96,
-            category: 'beverage'
-          },
-          { 
-            id: '5', 
-            name: 'Mango Sticky Rice', 
-            image: '/menu/mango-sticky-rice.jpg', 
-            price: 55000, 
-            orderCount: 89,
-            category: 'dessert'
-          },
-        ];
+        // Process API data
+        const apiData = response.data.data || response.data;
+        console.log('API response:', apiData);
         
-        setItems(mockData);
+        // Process and enhance with image paths
+        const processedData = apiData.map((item: any) => ({
+          ...item,
+          image: `/menu/${item.name.toLowerCase().replace(/\s+/g, '-')}.jpg`
+        }));
+        
+        setItems(processedData);
         setLoading(false);
-      } catch (err) {
-        console.error('Error fetching best selling items:', err);
-        setError('Failed to load best selling items');
+      } catch (err: any) {
+        console.error('Error fetching popular dishes:', err);
+        setError(err.message || 'Failed to load popular dishes');
         setLoading(false);
+        
+        // Fallback to empty data instead of mock data
+        setItems([]);
       }
     };
 
@@ -87,7 +61,11 @@ export default function BestSellingItems() {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+  
+  if (items.length === 0) {
+    return <div className="flex justify-center items-center h-full">No popular dishes data available</div>;
   }
 
   // Format number as VND currency
@@ -116,15 +94,17 @@ export default function BestSellingItems() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-              <p className="text-sm text-gray-500">{formatCurrency(item.price)}</p>
-              <div className="flex items-center mt-1">
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">
-                  {item.category}
-                </span>
-              </div>
+              <p className="text-sm text-gray-500">{formatCurrency(item.revenue / item.count)}</p>
+              {item.category && (
+                <div className="flex items-center mt-1">
+                  <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">
+                    {item.category}
+                  </span>
+                </div>
+              )}
             </div>
             <div className="text-center ml-4">
-              <div className="text-lg font-semibold">{item.orderCount}</div>
+              <div className="text-lg font-semibold">{item.count}</div>
               <div className="text-xs text-gray-500">orders</div>
             </div>
           </li>

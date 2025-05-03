@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../lib/services';
+import Cookies from 'js-cookie';
 
 interface User {
   _id: string;
@@ -28,6 +29,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [lastRefresh, setLastRefresh] = useState<number>(0);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
+  // Helper function to update cookies with user data
+  const updateCookies = (userData: User | null, token: string | null) => {
+    if (userData) {
+      // Store user data in cookie for middleware access (expires in 7 days)
+      Cookies.set('currentUser', JSON.stringify(userData), { expires: 7, path: '/' });
+      // Store auth token in cookie if provided
+      if (token) {
+        Cookies.set('authToken', token, { expires: 7, path: '/' });
+        // Also set auth_token for API calls
+        Cookies.set('auth_token', token, { expires: 7, path: '/' });
+      }
+    } else {
+      // Remove cookies on logout
+      Cookies.remove('currentUser', { path: '/' });
+      Cookies.remove('authToken', { path: '/' });
+      Cookies.remove('auth_token', { path: '/' });
+    }
+  };
+
   // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -38,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (!token) {
           setUser(null);
+          updateCookies(null, null);
           setIsLoading(false);
           return;
         }
@@ -47,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (response.user) {
           setUser(response.user);
+          updateCookies(response.user, token);
         } else if (response.isAuthenticated === true) {
           // Try to decode the token to get user info
           try {
@@ -63,20 +85,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               };
               
               setUser(tokenUser);
+              updateCookies(tokenUser, token);
               
               // Store this user in localStorage for future use
               localStorage.setItem('currentUser', JSON.stringify(tokenUser));
             }
           } catch (decodeError) {
             setUser(null);
+            updateCookies(null, null);
             localStorage.removeItem('authToken');
           }
         } else {
           setUser(null);
+          updateCookies(null, null);
           localStorage.removeItem('authToken');
         }
       } catch (error) {
         setUser(null);
+        updateCookies(null, null);
         localStorage.removeItem('authToken');
       } finally {
         setIsLoading(false);
@@ -115,6 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         if (response.user) {
           setUser(response.user);
+          const token = localStorage.getItem('authToken');
+          updateCookies(response.user, token);
           setIsLoading(false);
           return response.user;
         }
@@ -152,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = localStorage.getItem('authToken');
       if (!token) {
         setUser(null);
+        updateCookies(null, null);
         return null;
       }
 
@@ -159,6 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (response && response.user) {
         setUser(response.user);
+        updateCookies(response.user, token);
         return response.user;
       } else if (response && response.isAuthenticated === true) {
         // Thử lấy thông tin từ token nếu không có user trong response
@@ -173,6 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               name: payload.email.split('@')[0] // Use part of email as name if missing
             };
             setUser(tokenUser);
+            updateCookies(tokenUser, token);
             localStorage.setItem('currentUser', JSON.stringify(tokenUser));
             return tokenUser;
           }
@@ -181,6 +212,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         setUser(null);
+        updateCookies(null, null);
         return null;
       }
       
@@ -201,6 +233,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authService.logout();
       setUser(null);
+      updateCookies(null, null);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
