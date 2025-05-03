@@ -266,11 +266,25 @@ export const menuService = {
     try {
       const response = await api.delete(`/menu/${id}`);
       return {
-        data: response.data.data || response.data,
+        data: response.data,
         status: response.status
       };
     } catch (error) {
       console.error(`Error deleting menu item ${id}:`, error);
+      throw error;
+    }
+  },
+  
+  // Update menu item availability (admin only)
+  updateAvailability: async (id: string, isAvailable: boolean) => {
+    try {
+      const response = await api.patch(`/menu/${id}/availability`, { isAvailable });
+      return {
+        data: response.data,
+        status: response.status
+      };
+    } catch (error) {
+      console.error(`Error updating menu item availability ${id}:`, error);
       throw error;
     }
   }

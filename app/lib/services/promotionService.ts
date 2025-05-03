@@ -47,42 +47,42 @@ export const promotionService = {
     promotionType?: string;
     status?: 'active' | 'upcoming' | 'expired';
   }) => {
-    const response = await api.get<PromotionsListResponse>('/promotions', { params });
+    const response = await api.get<PromotionsListResponse>('/promotion', { params });
     return response.data;
   },
 
   getById: async (id: string) => {
-    const response = await api.get<PromotionResponse>(`/promotions/${id}`);
+    const response = await api.get<PromotionResponse>(`/promotion/${id}`);
     return response.data;
   },
 
   create: async (promotionData: Partial<Promotion>) => {
-    const response = await api.post<PromotionResponse>('/promotions', promotionData);
+    const response = await api.post<PromotionResponse>('/promotion', promotionData);
     return response.data;
   },
 
   createFlashSale: async (flashSaleData: Partial<Promotion> & { shouldNotify?: boolean }) => {
-    const response = await api.post<PromotionResponse>('/promotions/flash-sale', flashSaleData);
+    const response = await api.post<PromotionResponse>('/promotion/flash-sale', flashSaleData);
     return response.data;
   },
 
   update: async (id: string, promotionData: Partial<Promotion>) => {
-    const response = await api.put<PromotionResponse>(`/promotions/${id}`, promotionData);
+    const response = await api.put<PromotionResponse>(`/promotion/${id}`, promotionData);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await api.delete<{ status: string; message: string }>(`/promotions/${id}`);
+    const response = await api.delete<{ status: string; message: string }>(`/promotion/${id}`);
     return response.data;
   },
 
   getActiveFlashSales: async () => {
-    const response = await api.get<PromotionResponse>('/promotions/flash-sales/active');
+    const response = await api.get<PromotionResponse>('/promotion/active-flash-sales');
     return response.data;
   },
 
   getStats: async (id: string) => {
-    const response = await api.get<PromotionStatsResponse>(`/promotions/${id}/stats`);
+    const response = await api.get<PromotionStatsResponse>(`/promotion/${id}/stats`);
     return response.data;
   }
 }; 

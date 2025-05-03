@@ -153,4 +153,15 @@ export interface Promotion {
   promotionType: 'regular' | 'flash_sale';
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface Customer {
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  totalOrders: number;
+  totalSpent: number | null | undefined;
+  joinDate: string;
+  // Add any missing fields from the API response if needed
 } 
