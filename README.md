@@ -40,6 +40,22 @@ The front-end connects to the ChayFood API for cart operations:
 
 The cart system uses server actions and React hooks for state management.
 
+### Analytics Dashboard
+- **Real-time Business Metrics**: Interactive charts for revenue, orders, and customer data
+- **Date Range Filtering**: Filter analytics by day, week, month, quarter, year, or custom range
+- **Regional Analysis**: Filter data by North, Central, and South Vietnam regions
+- **Best-selling Items**: Track popularity of menu items with quantity and revenue metrics
+- **Order Tracking**: Detailed table view of recent orders with status and filtering
+- **Responsive Design**: Dashboard adapts to all screen sizes
+
+#### Analytics API Integration
+The dashboard connects to the ChayFood API for analytics:
+- `GET /api/analytics/orders/stats`: Get order statistics with filtering options
+- `GET /api/analytics/orders/trends`: Get order trend data over time
+- `GET /api/analytics/customers/stats`: Get customer statistics
+- `GET /api/analytics/dishes/popular`: Get popular dish rankings
+- `GET /api/analytics/orders/regional`: Get regional order distribution
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
