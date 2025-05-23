@@ -3,16 +3,23 @@
 import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { categoryService, Category } from '../../services/categoryService'
-import { menuService, MenuItem } from '../../services/menuService'
+import { menuService } from '@/lib/services'
+import { MenuItem } from '@/lib/services/types'
 import { toast } from 'react-hot-toast'
 
+// Extended Category type to handle both old and new format
+interface ExtendedCategory extends Category {
+  id?: number;
+  _id?: string;
+}
+
 export default function MenuPage() {
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<ExtendedCategory[]>([])
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showAddForm, setShowAddForm] = useState(false)
   const [showCategoryForm, setShowCategoryForm] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [editingCategory, setEditingCategory] = useState<ExtendedCategory | null>(null)
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null)
   const [menuItemFormData, setMenuItemFormData] = useState({
     name: '',
@@ -24,11 +31,15 @@ export default function MenuPage() {
   })
   const [categoryFormData, setCategoryFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    slug: '',
+    image: '',
+    isActive: true,
+    displayOrder: 0
   })
   const [isLoading, setIsLoading] = useState(false)
 
-  // Fetch categories and menu items on mount
+  // Fetch categories and menu items
   useEffect(() => {
     fetchCategories()
     fetchMenuItems()
@@ -45,99 +56,14 @@ export default function MenuPage() {
 
   const fetchMenuItems = async () => {
     try {
-      const data = await menuService.getAll()
-      setMenuItems(data)
+      const response = await menuService.getAll()
+      setMenuItems(response.data)
     } catch (error) {
       toast.error('Không thể tải menu')
     }
   }
 
-  const handleCategorySubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    try {
-      if (editingCategory) {
-        await categoryService.update(editingCategory.id, categoryFormData)
-        toast.success('Cập nhật danh mục thành công')
-      } else {
-        await categoryService.create(categoryFormData)
-        toast.success('Thêm danh mục thành công')
-      }
-      setShowCategoryForm(false)
-      setEditingCategory(null)
-      setCategoryFormData({ name: '', description: '' })
-      fetchCategories()
-    } catch (error) {
-      toast.error(editingCategory ? 'Lỗi cập nhật danh mục' : 'Lỗi thêm danh mục')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleMenuItemSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    try {
-      if (editingMenuItem) {
-        await menuService.update(editingMenuItem.id, menuItemFormData)
-        toast.success('Cập nhật món thành công')
-      } else {
-        await menuService.create(menuItemFormData)
-        toast.success('Thêm món thành công')
-      }
-      setShowAddForm(false)
-      setEditingMenuItem(null)
-      setMenuItemFormData({
-        name: '',
-        category: '',
-        price: 0,
-        description: '',
-        image: '',
-        isAvailable: true
-      })
-      fetchMenuItems()
-    } catch (error) {
-      toast.error(editingMenuItem ? 'Lỗi cập nhật món' : 'Lỗi thêm món')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleEditCategory = (category: Category) => {
-    setEditingCategory(category)
-    setCategoryFormData({
-      name: category.name,
-      description: category.description
-    })
-    setShowCategoryForm(true)
-  }
-
-  const handleEditMenuItem = (item: MenuItem) => {
-    setEditingMenuItem(item)
-    setMenuItemFormData({
-      name: item.name,
-      category: item.category,
-      price: item.price,
-      description: item.description,
-      image: item.image,
-      isAvailable: item.isAvailable
-    })
-    setShowAddForm(true)
-  }
-
-  const handleDeleteCategory = async (id: number) => {
-    if (!confirm('Bạn có chắc muốn xóa danh mục này?')) return
-
-    try {
-      await categoryService.delete(id)
-      toast.success('Xóa danh mục thành công')
-      fetchCategories()
-    } catch (error) {
-      toast.error('Lỗi xóa danh mục')
-    }
-  }
-
-  const handleDeleteMenuItem = async (id: number) => {
+  const handleDeleteMenuItem = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa món này?')) return
 
     try {
@@ -149,7 +75,7 @@ export default function MenuPage() {
     }
   }
 
-  const handleToggleAvailability = async (id: number, currentStatus: boolean) => {
+  const handleToggleAvailability = async (id: string, currentStatus: boolean) => {
     try {
       await menuService.updateAvailability(id, !currentStatus)
       toast.success('Cập nhật trạng thái thành công')
@@ -159,9 +85,133 @@ export default function MenuPage() {
     }
   }
 
+  const handleDeleteCategory = async (id: string | number) => {
+    if (!confirm('Bạn có chắc muốn xóa danh mục này?')) return
+
+    try {
+      await categoryService.delete(id)
+      toast.success('Xóa danh mục thành công')
+      fetchCategories()
+    } catch (error) {
+      toast.error('Lỗi xóa danh mục')
+    }
+  }
+
+  const handleEditCategory = (category: ExtendedCategory) => {
+    setEditingCategory(category)
+    setCategoryFormData({
+      name: category.name,
+      description: category.description,
+      slug: category.slug || '',
+      image: category.image || '',
+      isActive: category.isActive !== undefined ? category.isActive : true,
+      displayOrder: category.displayOrder || 0
+    })
+    setShowCategoryForm(true)
+  }
+
+  const handleEditMenuItem = (item: MenuItem) => {
+    setEditingMenuItem(item)
+    setMenuItemFormData({
+      name: item.name,
+      category: typeof item.category === 'string' ? item.category : (item.category as any)?._id || '',
+      price: item.price,
+      description: item.description,
+      image: item.image,
+      isAvailable: item.isAvailable
+    })
+    setShowAddForm(true)
+  }
+
+  // Reset category form
+  const resetCategoryForm = () => {
+    setShowCategoryForm(false)
+    setEditingCategory(null)
+    setCategoryFormData({
+      name: '',
+      description: '',
+      slug: '',
+      image: '',
+      isActive: true,
+      displayOrder: 0
+    })
+  }
+
+  // Handle category form submission
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      if (editingCategory) {
+        await categoryService.update(editingCategory._id || editingCategory.id || '', categoryFormData)
+        toast.success('Cập nhật danh mục thành công')
+      } else {
+        await categoryService.create(categoryFormData)
+        toast.success('Thêm danh mục thành công')
+      }
+      fetchCategories()
+      resetCategoryForm()
+    } catch (error) {
+      toast.error(editingCategory ? 'Lỗi cập nhật danh mục' : 'Lỗi thêm danh mục')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle menu item form submission
+  const handleMenuItemSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+
+    try {
+      if (editingMenuItem) {
+        // Cast the category string to the required type
+        const updatedMenuItem = {
+          ...menuItemFormData,
+          category: menuItemFormData.category as 'main' | 'side' | 'dessert' | 'beverage'
+        }
+        await menuService.update(editingMenuItem._id, updatedMenuItem)
+        toast.success('Cập nhật món thành công')
+      } else {
+        // Cast for new item creation too
+        const newMenuItem = {
+          ...menuItemFormData,
+          category: menuItemFormData.category as 'main' | 'side' | 'dessert' | 'beverage'
+        }
+        await menuService.create(newMenuItem as Omit<MenuItem, '_id'>)
+        toast.success('Thêm món thành công')
+      }
+      fetchMenuItems()
+      setShowAddForm(false)
+      setEditingMenuItem(null)
+      setMenuItemFormData({
+        name: '',
+        category: '',
+        price: 0,
+        description: '',
+        image: '',
+        isAvailable: true
+      })
+    } catch (error) {
+      toast.error(editingMenuItem ? 'Lỗi cập nhật món' : 'Lỗi thêm món')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Filter menu items based on selected category
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
-    : menuItems.filter(item => item.category === selectedCategory)
+    : menuItems.filter(item => {
+        // Check if item.category is a string or an object with _id
+        if (typeof item.category === 'string') {
+          return item.category === selectedCategory;
+        } else if (typeof item.category === 'object' && item.category && '_id' in (item.category as any)) {
+          return (item.category as any)._id === selectedCategory;
+        }
+        return false;
+      });
 
   return (
     <div className="container mx-auto px-4">
@@ -183,7 +233,7 @@ export default function MenuPage() {
           <button 
             onClick={() => {
               setEditingCategory(null)
-              setCategoryFormData({ name: '', description: '' })
+              setCategoryFormData({ name: '', description: '', slug: '', image: '', isActive: true, displayOrder: 0 })
               setShowCategoryForm(true)
             }}
             className="text-green-600 hover:text-green-700 flex items-center gap-1"
@@ -194,7 +244,7 @@ export default function MenuPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {categories.map((category) => (
-            <div key={category.id} className="border rounded-lg p-4 flex justify-between items-center">
+            <div key={category._id || category.id} className="border rounded-lg p-4 flex justify-between items-center">
               <div>
                 <h3 className="font-medium">{category.name}</h3>
                 <p className="text-sm text-gray-500">{category.description}</p>
@@ -207,7 +257,7 @@ export default function MenuPage() {
                   <PencilIcon className="h-5 w-5" />
                 </button>
                 <button 
-                  onClick={() => handleDeleteCategory(category.id)}
+                  onClick={() => handleDeleteCategory(category._id || category.id || '')}
                   className="text-red-600 hover:text-red-700"
                 >
                   <TrashIcon className="h-5 w-5" />
@@ -227,11 +277,7 @@ export default function MenuPage() {
                 {editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}
               </h3>
               <button 
-                onClick={() => {
-                  setShowCategoryForm(false)
-                  setEditingCategory(null)
-                  setCategoryFormData({ name: '', description: '' })
-                }}
+                onClick={resetCategoryForm}
                 className="text-gray-500 hover:text-gray-700"
               >
                 <XMarkIcon className="h-5 w-5" />
@@ -264,14 +310,59 @@ export default function MenuPage() {
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Slug (URL)
+                </label>
+                <input
+                  type="text"
+                  value={categoryFormData.slug}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, slug: e.target.value })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Nhập slug (vd: mon-chinh)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Hình ảnh
+                </label>
+                <input
+                  type="text"
+                  value={categoryFormData.image}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, image: e.target.value })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Nhập URL hình ảnh"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="isActive"
+                  checked={categoryFormData.isActive}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, isActive: e.target.checked })}
+                  className="h-4 w-4 text-green-600 border-gray-300 rounded"
+                />
+                <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+                  Hiển thị danh mục
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Thứ tự hiển thị
+                </label>
+                <input
+                  type="number"
+                  value={categoryFormData.displayOrder}
+                  onChange={(e) => setCategoryFormData({ ...categoryFormData, displayOrder: Number(e.target.value) })}
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="Nhập số thứ tự"
+                  min="0"
+                />
+              </div>
               <div className="flex justify-end gap-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowCategoryForm(false)
-                    setEditingCategory(null)
-                    setCategoryFormData({ name: '', description: '' })
-                  }}
+                  onClick={resetCategoryForm}
                   className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                   disabled={isLoading}
                 >
@@ -304,12 +395,12 @@ export default function MenuPage() {
         </button>
         {categories.map((category) => (
           <button
-            key={category.id}
-            onClick={() => setSelectedCategory(category.name)}
-            className={`px-4 py-2 rounded-lg whitespace-nowrap ${
-              selectedCategory === category.name
-                ? 'bg-green-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            key={category._id || category.id}
+            onClick={() => setSelectedCategory(String(category._id || category.id))}
+            className={`px-4 py-2 rounded-lg ${
+              selectedCategory === String(category._id || category.id)
+                ? 'bg-green-500 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
             {category.name}
@@ -317,35 +408,40 @@ export default function MenuPage() {
         ))}
       </div>
 
-      {/* Menu Items Grid */}
+      {/* Menu Items List */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
-          <div key={item.id} className="bg-white rounded-lg shadow overflow-hidden">
+          <div key={item._id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="aspect-w-16 aspect-h-9 bg-gray-200">
               <img
                 src={item.image}
                 alt={item.name}
-                className="object-cover w-full h-48"
+                className="w-full h-48 object-cover"
               />
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-medium">{item.name}</h3>
-                <span className="text-green-600 font-medium">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
-                </span>
+                <h3 className="font-semibold text-lg">{item.name}</h3>
+                <span className="font-medium text-green-600">${item.price.toFixed(2)}</span>
               </div>
-              <p className="text-gray-500 text-sm mb-4">{item.description}</p>
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={() => handleToggleAvailability(item.id, item.isAvailable)}
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}
-                >
+              <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+              <div className="flex items-center justify-between">
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
                   {item.isAvailable ? 'Còn món' : 'Hết món'}
-                </button>
+                </span>
                 <div className="flex gap-2">
+                  <button
+                    onClick={() => handleToggleAvailability(item._id, item.isAvailable)}
+                    className={`px-2 py-1 rounded text-xs ${
+                      item.isAvailable 
+                        ? 'bg-red-100 text-red-800 hover:bg-red-200' 
+                        : 'bg-green-100 text-green-800 hover:bg-green-200'
+                    }`}
+                  >
+                    {item.isAvailable ? 'Đánh dấu hết' : 'Đánh dấu còn'}
+                  </button>
                   <button 
                     onClick={() => handleEditMenuItem(item)}
                     className="text-blue-600 hover:text-blue-700"
@@ -353,7 +449,7 @@ export default function MenuPage() {
                     <PencilIcon className="h-5 w-5" />
                   </button>
                   <button 
-                    onClick={() => handleDeleteMenuItem(item.id)}
+                    onClick={() => handleDeleteMenuItem(item._id)}
                     className="text-red-600 hover:text-red-700"
                   >
                     <TrashIcon className="h-5 w-5" />
@@ -413,7 +509,9 @@ export default function MenuPage() {
                 >
                   <option value="">Chọn danh mục</option>
                   {categories.map(category => (
-                    <option key={category.id} value={category.name}>{category.name}</option>
+                    <option key={category._id || category.id} value={category._id || category.id}>
+                      {category.name}
+                    </option>
                   ))}
                 </select>
               </div>

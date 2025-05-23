@@ -31,6 +31,8 @@ type MenuItemFormProps = {
   mode: 'create' | 'edit';
 };
 
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export default function MenuItemForm({ menuItemId, mode }: MenuItemFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -66,45 +68,41 @@ export default function MenuItemForm({ menuItemId, mode }: MenuItemFormProps) {
   useEffect(() => {
     if (mode === 'edit' && menuItemId) {
       setIsLoading(true);
-      // In a real implementation, you would fetch data from your API
-      // For now, we'll use mock data
       
-      // Simulating API call
-      setTimeout(() => {
-        // Mock data for an existing menu item
-        const mockData: FormValues = {
-          name: 'Vegan Pho',
-          description: 'Traditional Vietnamese soup with rice noodles, tofu, and vegetables',
-          price: 98000,
-          category: 'main',
-          image: '/menu/vegan-pho.jpg',
-          isAvailable: true,
-          nutritionInfo: {
-            calories: 320,
-            protein: 12,
-            carbs: 45,
-            fat: 6
-          },
-          preparationTime: 15,
-          ingredients: ['Rice Noodles', 'Tofu', 'Bean Sprouts', 'Mushrooms', 'Herbs'],
-          allergens: ['Gluten', 'Soy']
-        };
-        
-        // Set form values
-        Object.entries(mockData).forEach(([key, value]) => {
-          // Handle nutritionInfo object separately
-          if (key === 'nutritionInfo') {
-            Object.entries(value).forEach(([nutritionKey, nutritionValue]) => {
-              setValue(`nutritionInfo.${nutritionKey}` as any, nutritionValue);
-            });
-          } else {
-            setValue(key as any, value);
-          }
-        });
-        
-        setImagePreview(mockData.image);
-        setIsLoading(false);
-      }, 500);
+      const fetchMenuItem = async () => {
+        try {
+          console.log(`Fetching menu item with ID: ${menuItemId}`);
+          const response = await axios.get(`${BASE_API_URL}/api/admin/menu-items/${menuItemId}`, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('authToken')}`
+            }
+          });
+          
+          const apiData = response.data.data || response.data;
+          console.log('API response:', apiData);
+          
+          // Set form values
+          Object.entries(apiData).forEach(([key, value]) => {
+            // Handle nutritionInfo object separately
+            if (key === 'nutritionInfo') {
+              Object.entries(value as any).forEach(([nutritionKey, nutritionValue]) => {
+                setValue(`nutritionInfo.${nutritionKey}` as any, nutritionValue);
+              });
+            } else {
+              setValue(key as any, value);
+            }
+          });
+          
+          setImagePreview(apiData.image);
+          setIsLoading(false);
+        } catch (err: any) {
+          console.error('Error fetching menu item:', err);
+          setError(err.message || 'Failed to load menu item');
+          setIsLoading(false);
+        }
+      };
+      
+      fetchMenuItem();
     }
   }, [menuItemId, mode, setValue]);
 
@@ -113,17 +111,27 @@ export default function MenuItemForm({ menuItemId, mode }: MenuItemFormProps) {
       setIsSubmitting(true);
       setError(null);
       
-      // In a real implementation, you would send data to your API
-      console.log('Form data to submit:', data);
+      console.log('Submitting form data:', data);
       
-      // Simulate API request
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (mode === 'create') {
+        await axios.post(`${BASE_API_URL}/api/admin/menu-items`, data, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+      } else {
+        await axios.put(`${BASE_API_URL}/api/admin/menu-items/${menuItemId}`, data, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+      }
       
       // Redirect after successful submission
       router.push('/admin/menu');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting form:', err);
-      setError('Failed to save menu item. Please try again.');
+      setError(err.message || 'Failed to save menu item. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -18,9 +18,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import { categoryService, Category } from '../services/categoryService';
 
 interface MenuResponse {
-  data: MenuItem[];
+  data: MenuItem[] | { data?: MenuItem[], items?: MenuItem[] };
   status: number;
 }
 
@@ -38,6 +39,7 @@ const container = {
 const DEBOUNCE_DELAY = 300;
 
 export default function MenuPage() {
+  const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -68,10 +70,25 @@ export default function MenuPage() {
     };
   }, [searchQuery]);
 
-  const fetchMenuItems = useCallback(() => {
-    // Just fetch all items without any filters
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await categoryService.getAll();
+        console.log('Fetched categories:', data);
+        setCategories(data);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+    
+    fetchCategories();
+  }, []);
+
+  const fetchMenuItems = useCallback(async () => {
+    console.log('Calling menuService.getAll()');
     return menuService.getAll();
-  }, []); // No dependencies needed since we're not using any filters in the API call
+  }, []);
 
   const { data, loading, error } = useApi<MenuResponse>(
     fetchMenuItems,
@@ -79,49 +96,101 @@ export default function MenuPage() {
     [] // No dependencies needed
   );
 
+  // For debugging
+  useEffect(() => {
+    console.log('API Response:', data);
+  }, [data]);
+
   // Process the menu items with client-side filters
   const menuItems = useMemo(() => {
-    if (!data?.data) return [];
+    if (!data) {
+      console.log('No data available');
+      return [];
+    }
     
-    console.log('📋 Starting client-side filtering with:', {
-      totalItems: data.data.length,
-      sampleItem: data.data[0], // Log a sample item to check structure
-      filters: {
-        category,
-        searchQuery: debouncedSearchQuery,
-        spicyLevel,
-        priceRange,
-        nutritionRange,
-        excludedIngredients
+    // Check data structure
+    let items: MenuItem[] = [];
+    
+    if (Array.isArray(data.data)) {
+      console.log('Direct array data:', data.data.length);
+      items = data.data;
+    } else if (typeof data.data === 'object' && data.data !== null) {
+      const nestedData = data.data as { data?: MenuItem[], items?: MenuItem[] };
+      // Handle case where data might be nested
+      if (Array.isArray(nestedData.data)) {
+        console.log('Nested data array:', nestedData.data.length);
+        items = nestedData.data;
+      } else if (Array.isArray(nestedData.items)) {
+        console.log('Nested items array:', nestedData.items.length);
+        items = nestedData.items;
       }
-    });
+    }
+    
+    if (items.length === 0) {
+      console.log('No menu items found in data structure:', data);
+      return [];
+    }
+    
+    console.log('Found menu items:', items.length);
     
     // Apply all filters on client side
-    const filteredItems = data.data.filter(item => {
+    const filteredItems = items.filter(item => {
+      // Log each item being processed to understand structure
+      if (items.indexOf(item) < 3) {
+        console.log('Sample item to filter:', JSON.stringify(item, null, 2));
+      }
+      
       // Category filter
-      if (category && item.category !== category) return false;
+      if (category) {
+        // Check if category is object or string
+        const itemCategoryId = typeof item.category === 'object' 
+          ? (item.category as any)?._id 
+          : item.category;
+        
+        console.log(`Comparing category: item=${itemCategoryId}, selected=${category}`);
+        
+        if (itemCategoryId !== category) {
+          console.log(`Item "${item.name}" filtered out by category: ${itemCategoryId} !== ${category}`);
+          return false;
+        }
+      }
       
       // Search query filter
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
         const matchesSearch = 
           item.name.toLowerCase().includes(searchLower) ||
-          item.description.toLowerCase().includes(searchLower) ||
-          item.category.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
+          (item.description && item.description.toLowerCase().includes(searchLower)) ||
+          (item.category && item.category.toLowerCase().includes(searchLower));
+        if (!matchesSearch) {
+          // console.log(`Item ${item.name} filtered out by search query`);
+          return false;
+        }
       }
       
-      // Spicy level filter
-      if (spicyLevel !== null && item.spicyLevel !== spicyLevel) return false;
+      // Spicy level filter - only apply if selected
+      if (spicyLevel !== null) {
+        // Kiểm tra giá trị spicyLevel trong item
+        if (typeof item.spicyLevel === 'undefined') {
+          return false; // Lọc ra các món không có spicyLevel khi người dùng đã chọn filter
+        }
+        if (item.spicyLevel !== spicyLevel) {
+          // console.log(`Item ${item.name} filtered out by spicy level: ${item.spicyLevel} !== ${spicyLevel}`);
+          return false;
+        }
+      }
       
-      // Price range filter
-      if (priceRange && priceRange.length === 2) {
+      // Price range filter - only apply if min/max changed from defaults
+      if (priceRange && priceRange.length === 2 && (priceRange[0] > 0 || priceRange[1] < 50)) {
         const [min, max] = priceRange;
-        if (item.price < min || item.price > max) return false;
+        if (item.price < min || item.price > max) {
+          // console.log(`Item ${item.name} filtered out by price range: ${item.price} not in [${min}, ${max}]`);
+          return false;
+        }
       }
 
-      // Nutrition filters
-  const { 
+      // Nutrition filters - only apply if any nutrition filter was changed
+      const { 
         calories: [minCal, maxCal], 
         protein: [minProtein, maxProtein],
         fat: [minFat, maxFat],
@@ -130,54 +199,34 @@ export default function MenuPage() {
       
       // Check if nutrition values are being filtered
       const isFilteringNutrition = minCal > 0 || maxCal < 1000 || 
-                                 minProtein > 0 || maxProtein < 50 ||
-                                 minFat > 0 || maxFat < 50 ||
-                                 minCarbs > 0 || maxCarbs < 100;
+                               minProtein > 0 || maxProtein < 50 ||
+                               minFat > 0 || maxFat < 50 ||
+                               minCarbs > 0 || maxCarbs < 100;
       
       if (isFilteringNutrition) {
-        // Log the item's nutrition data for debugging
-        console.log('🍎 Checking nutrition for item:', {
-          itemName: item.name,
-          itemNutritionInfo: item.nutritionInfo,
-          nutritionRange
-        });
-        
         // Skip items without nutrition data when filtering
-        if (!item.nutritionInfo) return false;
+        if (!item.nutritionInfo) {
+          // console.log(`Item ${item.name} filtered out - no nutrition info`);
+          return false;
+        }
         
         // Check calories range
         if (item.nutritionInfo.calories < minCal || item.nutritionInfo.calories > maxCal) {
-          console.log(`❌ ${item.name} filtered out by calories:`, {
-            itemCalories: item.nutritionInfo.calories,
-            range: [minCal, maxCal]
-          });
           return false;
         }
         
         // Check protein range
         if (item.nutritionInfo.protein < minProtein || item.nutritionInfo.protein > maxProtein) {
-          console.log(`❌ ${item.name} filtered out by protein:`, {
-            itemProtein: item.nutritionInfo.protein,
-            range: [minProtein, maxProtein]
-          });
           return false;
         }
 
         // Check fat range
         if (item.nutritionInfo.fat < minFat || item.nutritionInfo.fat > maxFat) {
-          console.log(`❌ ${item.name} filtered out by fat:`, {
-            itemFat: item.nutritionInfo.fat,
-            range: [minFat, maxFat]
-          });
           return false;
         }
 
         // Check carbs range
         if (item.nutritionInfo.carbs < minCarbs || item.nutritionInfo.carbs > maxCarbs) {
-          console.log(`❌ ${item.name} filtered out by carbs:`, {
-            itemCarbs: item.nutritionInfo.carbs,
-            range: [minCarbs, maxCarbs]
-          });
           return false;
         }
       }
@@ -189,9 +238,12 @@ export default function MenuPage() {
             ing.toLowerCase().includes(excluded.toLowerCase())
           )
         );
-        if (hasExcludedIngredient) return false;
+        if (hasExcludedIngredient) {
+          return false;
+        }
       }
       
+      // Item passed all filters
       return true;
     });
     
@@ -201,7 +253,7 @@ export default function MenuPage() {
         hasCategory: !!category,
         hasSearch: !!debouncedSearchQuery,
         hasSpicyLevel: spicyLevel !== null,
-        hasPriceRange: !!priceRange?.length,
+        hasPriceRange: priceRange[0] > 0 || priceRange[1] < 50,
         hasNutritionFilter: nutritionRange.calories[0] > 0 || nutritionRange.calories[1] < 1000 ||
                           nutritionRange.protein[0] > 0 || nutritionRange.protein[1] < 50,
         excludedIngredientsCount: excludedIngredients.length
@@ -210,6 +262,11 @@ export default function MenuPage() {
     
     return filteredItems;
   }, [data, category, debouncedSearchQuery, spicyLevel, priceRange, nutritionRange, excludedIngredients]);
+
+  // Log menu items whenever they change for debugging
+  useEffect(() => {
+    console.log('Current menuItems:', menuItems.length, menuItems[0]);
+  }, [menuItems]);
 
   // Handler for adding excluded ingredients
   const handleAddIngredient = useCallback(() => {
@@ -493,21 +550,26 @@ export default function MenuPage() {
             >
               All Menu
             </motion.button>
-            {['main', 'side', 'dessert', 'beverage'].map((cat) => (
-              <motion.button
-                key={cat}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setCategory(cat)}
-                className={`px-6 py-2.5 rounded-full font-medium capitalize transition-all duration-200 ${
-                  category === cat
-                    ? 'bg-green-500 text-white shadow-md'
-                    : 'bg-white text-green-600 hover:bg-green-50 border border-green-100'
-                }`}
-              >
-                {cat}
-              </motion.button>
-            ))}
+            {categories.map((cat) => {
+              // Get a string ID from the category
+              const catId = String(cat._id || cat.id || '');
+              
+              return (
+                <motion.button
+                  key={catId}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setCategory(catId)}
+                  className={`px-6 py-2.5 rounded-full font-medium capitalize transition-all duration-200 ${
+                    category === catId
+                      ? 'bg-green-500 text-white shadow-md'
+                      : 'bg-white text-green-600 hover:bg-green-50 border border-green-100'
+                  }`}
+                >
+                  {cat.name}
+                </motion.button>
+              );
+            })}
           </div>
         </div>
       </div>

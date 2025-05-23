@@ -5,6 +5,10 @@ import { Inter } from 'next/font/google'
 import Navbar from './components/navbar'
 import { ChatAgent } from '@/components/chat/chat-agent'
 import ClientProviders from './components/ClientProviders'
+import dynamic from 'next/dynamic'
+
+// Import CartDebug component dynamically with no SSR to avoid hydration issues
+const CartDebug = dynamic(() => import('./components/CartDebug'), { ssr: false })
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -64,6 +68,7 @@ export default function RootLayout({
             </div>
           </footer>
           <ChatAgent />
+          <CartDebug />
         </ClientProviders>
       </body>
     </html>

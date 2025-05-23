@@ -10,11 +10,23 @@ export type User = {
   picture?: string;
 };
 
+// Helper function to get auth token from cookies
+async function getAuthTokenFromCookies() {
+  const cookieStore = await cookies();
+  
+  // Check both cookie names for auth token
+  let token = cookieStore.get('auth_token')?.value;
+  if (!token) {
+    token = cookieStore.get('authToken')?.value;
+  }
+  
+  return token;
+}
+
 // Lấy thông tin người dùng hiện tại từ server component
 export async function getCurrentUser() {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const token = await getAuthTokenFromCookies();
     
     if (!token) {
       return null;
@@ -46,6 +58,7 @@ export async function logout() {
   try {
     const cookieStore = await cookies();
     cookieStore.delete('auth_token');
+    cookieStore.delete('authToken');
     return { success: true };
   } catch (error) {
     console.error('Lỗi đăng xuất:', error);
@@ -57,6 +70,7 @@ export async function logout() {
 export async function setAuthToken(token: string) {
   try {
     const cookieStore = await cookies();
+    // Set both cookie names for compatibility
     cookieStore.set({
       name: 'auth_token',
       value: token,
@@ -65,6 +79,16 @@ export async function setAuthToken(token: string) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/'
     });
+    
+    cookieStore.set({
+      name: 'authToken',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    });
+    
     return { success: true };
   } catch (error) {
     console.error('Lỗi lưu token:', error);

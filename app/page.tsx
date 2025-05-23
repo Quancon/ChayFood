@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Environmental from './components/Environmental'
 import Testimonials from './components/Testimonials'
 import Partners from './components/Partners'
+import { useRedirectByRole } from './hooks/useRedirectByRole'
 
 const products = [
   {
@@ -30,6 +31,9 @@ const products = [
 ]
 
 export default function Home() {
+  // This hook will automatically redirect admin users to the admin dashboard
+  useRedirectByRole({ adminRedirect: '/admin' });
+  
   return (
     <main className="min-h-screen">
       {/* Hero Section */}

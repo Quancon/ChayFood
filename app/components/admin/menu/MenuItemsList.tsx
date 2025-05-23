@@ -23,6 +23,8 @@ type MenuItem = {
   preparationTime: number;
 };
 
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export default function MenuItemsList() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,101 +35,23 @@ export default function MenuItemsList() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // In a real implementation, you would fetch data from your API
-        // For now, we'll use mock data
-        // const response = await axios.get('/api/admin/menu-items');
-        // setMenuItems(response.data);
+        console.log('Fetching menu items from API');
+        const response = await axios.get(`${BASE_API_URL}/api/admin/menu-items`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
         
-        // Mock data
-        const mockData: MenuItem[] = [
-          { 
-            id: '1', 
-            name: 'Vegan Pho', 
-            description: 'Traditional Vietnamese soup with rice noodles, tofu, and vegetables',
-            image: '/menu/vegan-pho.jpg', 
-            price: 98000,
-            category: 'main',
-            isAvailable: true,
-            nutritionInfo: {
-              calories: 320,
-              protein: 12,
-              carbs: 45,
-              fat: 6
-            },
-            preparationTime: 15
-          },
-          { 
-            id: '2', 
-            name: 'Tofu Rice Bowl', 
-            description: 'Crispy tofu with steamed rice, fresh vegetables and spicy sauce',
-            image: '/menu/tofu-rice.jpg', 
-            price: 85000,
-            category: 'main',
-            isAvailable: true,
-            nutritionInfo: {
-              calories: 420,
-              protein: 18,
-              carbs: 60,
-              fat: 10
-            },
-            preparationTime: 12
-          },
-          { 
-            id: '3', 
-            name: 'Mushroom Spring Rolls', 
-            description: 'Fresh spring rolls filled with mushrooms, carrots, cucumber and herbs',
-            image: '/menu/spring-rolls.jpg', 
-            price: 65000,
-            category: 'side',
-            isAvailable: true,
-            nutritionInfo: {
-              calories: 220,
-              protein: 6,
-              carbs: 28,
-              fat: 8
-            },
-            preparationTime: 10
-          },
-          { 
-            id: '4', 
-            name: 'Coconut Smoothie', 
-            description: 'Refreshing coconut smoothie with a hint of vanilla',
-            image: '/menu/coconut-smoothie.jpg', 
-            price: 45000,
-            category: 'beverage',
-            isAvailable: true,
-            nutritionInfo: {
-              calories: 180,
-              protein: 3,
-              carbs: 22,
-              fat: 8
-            },
-            preparationTime: 5
-          },
-          { 
-            id: '5', 
-            name: 'Mango Sticky Rice', 
-            description: 'Sweet sticky rice with fresh mango and coconut cream',
-            image: '/menu/mango-sticky-rice.jpg', 
-            price: 55000,
-            category: 'dessert',
-            isAvailable: false,
-            nutritionInfo: {
-              calories: 320,
-              protein: 4,
-              carbs: 65,
-              fat: 6
-            },
-            preparationTime: 8
-          },
-        ];
+        const apiData = response.data.data || response.data;
+        console.log('API response:', apiData);
         
-        setMenuItems(mockData);
+        setMenuItems(apiData);
         setLoading(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching menu items:', err);
-        setError('Failed to load menu items');
+        setError(err.message || 'Failed to load menu items');
         setLoading(false);
+        setMenuItems([]);
       }
     };
 
@@ -155,7 +79,11 @@ export default function MenuItemsList() {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return <div className="text-red-500">Error: {error}</div>;
+  }
+  
+  if (menuItems.length === 0) {
+    return <div className="flex justify-center items-center h-64">No menu items available</div>;
   }
 
   // Filter items based on category and search query
@@ -253,12 +181,11 @@ export default function MenuItemsList() {
                       />
                     </div>
                   </td>
-                  <td className="whitespace-nowrap py-4 pl-3 pr-3 text-sm">
-                    <div className="font-medium text-gray-900">{item.name}</div>
-                    <div className="text-gray-500 truncate max-w-[200px]">{item.description}</div>
+                  <td className="whitespace-nowrap py-4 pl-3 pr-3 text-sm font-medium text-gray-900">
+                    {item.name}
                   </td>
                   <td className="whitespace-nowrap py-4 pl-3 pr-3 text-sm text-gray-500">
-                    {categoryLabels[item.category]}
+                    {categoryLabels[item.category as keyof typeof categoryLabels]}
                   </td>
                   <td className="whitespace-nowrap py-4 pl-3 pr-3 text-sm text-gray-500">
                     {formatCurrency(item.price)}
@@ -266,8 +193,10 @@ export default function MenuItemsList() {
                   <td className="whitespace-nowrap py-4 pl-3 pr-3 text-sm">
                     <button
                       onClick={() => handleToggleAvailability(item.id)}
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                        item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        item.isAvailable
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
                       }`}
                     >
                       {item.isAvailable ? 'Available' : 'Unavailable'}
@@ -277,14 +206,14 @@ export default function MenuItemsList() {
                     {item.preparationTime} min
                   </td>
                   <td className="whitespace-nowrap py-4 pl-3 pr-3 text-sm text-gray-500">
-                    <div className="flex space-x-3">
-                      <Link href={`/admin/menu/view/${item.id}`} className="text-blue-500 hover:text-blue-700">
+                    <div className="flex space-x-2">
+                      <Link href={`/admin/menu/view/${item.id}`} className="text-gray-500 hover:text-blue-500">
                         <EyeIcon className="h-5 w-5" />
                       </Link>
-                      <Link href={`/admin/menu/edit/${item.id}`} className="text-amber-500 hover:text-amber-700">
+                      <Link href={`/admin/menu/edit/${item.id}`} className="text-gray-500 hover:text-blue-500">
                         <PencilIcon className="h-5 w-5" />
                       </Link>
-                      <button className="text-red-500 hover:text-red-700">
+                      <button className="text-gray-500 hover:text-red-500">
                         <TrashIcon className="h-5 w-5" />
                       </button>
                     </div>
