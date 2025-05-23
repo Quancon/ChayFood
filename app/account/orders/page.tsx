@@ -61,7 +61,7 @@ interface Order {
 }
 
 export default function OrdersPage() {
-  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,7 +200,7 @@ export default function OrdersPage() {
           {activeTab !== 'all' ? (
             <p className="text-gray-600 mb-6">No {activeTab} orders found. Try viewing all orders.</p>
           ) : (
-            <p className="text-gray-600 mb-6">You haven't placed any orders yet.</p>
+            <p className="text-gray-600 mb-6">You haven&apos;t placed any orders yet.</p>
           )}
           <button
             onClick={() => router.push('/menu')}

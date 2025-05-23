@@ -5,6 +5,7 @@ import Environmental from './components/Environmental'
 import Testimonials from './components/Testimonials'
 import Partners from './components/Partners'
 import { useRedirectByRole } from './hooks/useRedirectByRole'
+import Link from 'next/link'
 
 const products = [
   {
@@ -60,9 +61,9 @@ export default function Home() {
             <p className="text-xl md:text-2xl mb-8">
               Trải nghiệm bữa ăn sạch tươi ngon giàu dinh dưỡng
             </p>
-            <a href="/order" className="btn btn-primary">
+            <Link href="/order" className="btn btn-primary">
               Đặt Ngay
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>

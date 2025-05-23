@@ -38,7 +38,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
   })
   
   // For password confirmation validation
-  const password = watch('password')
+  // const login = watch('password')
   
   const onSubmit = async (data: FormData) => {
     setError('')
@@ -170,7 +170,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
             disabled={isLoading}
             {...register('confirmPassword', { 
               required: 'Please confirm your password',
-              validate: value => value === password || 'Passwords do not match'
+              validate: value => value === watch('password') || 'Passwords do not match'
             })}
           />
           {errors.confirmPassword && (

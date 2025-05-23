@@ -123,7 +123,7 @@ interface OrderItem {
 
 export default function OrderDetailsPage() {
   const { id } = useParams() as { id: string };
-  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [order, setOrder] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
