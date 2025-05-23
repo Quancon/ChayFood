@@ -4,6 +4,8 @@ import Image from 'next/image'
 import Environmental from './components/Environmental'
 import Testimonials from './components/Testimonials'
 import Partners from './components/Partners'
+import { useRedirectByRole } from './hooks/useRedirectByRole'
+import Link from 'next/link'
 
 const products = [
   {
@@ -30,6 +32,9 @@ const products = [
 ]
 
 export default function Home() {
+  // This hook will automatically redirect admin users to the admin dashboard
+  useRedirectByRole({ adminRedirect: '/admin' });
+  
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -56,9 +61,9 @@ export default function Home() {
             <p className="text-xl md:text-2xl mb-8">
               Trải nghiệm bữa ăn sạch tươi ngon giàu dinh dưỡng
             </p>
-            <a href="/order" className="btn btn-primary">
+            <Link href="/order" className="btn btn-primary">
               Đặt Ngay
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>

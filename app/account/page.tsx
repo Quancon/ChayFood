@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
@@ -9,6 +9,13 @@ export default function AccountPage() {
   const { isAuthenticated, user, logout } = useAuth();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    // Check if we're in the browser environment
+    if (typeof window !== 'undefined') {
+      router.push('/account/profile');
+    }
+  }, [router]);
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {

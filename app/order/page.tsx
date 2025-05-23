@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../context/AuthContext';
-import { orderAPI, CreateOrderDto } from '../lib/api';
+import { orderService } from '../lib/services';
+import { CreateOrderDto } from '../lib/services/types';
 import Image from 'next/image';
 
 export default function OrderPage() {
@@ -74,7 +75,7 @@ export default function OrderPage() {
       };
 
       // Submit order
-      const response = await orderAPI.create(orderData);
+      const response = await orderService.create(orderData);
       setOrderCreated({ orderId: response.data._id });
       setSuccess(true);
       clearCart();

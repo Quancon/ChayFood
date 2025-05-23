@@ -8,49 +8,100 @@ import { useCart } from '../hooks/useCart'
 import { useAuth } from '../context/AuthContext'
 import AuthModal from './auth/AuthModal'
 
-export default function MobileNav() {
+interface User {
+  _id: string;
+  email: string;
+  name: string;
+  role: 'user' | 'admin';
+}
+
+interface MobileNavProps {
+  isAuthenticated?: boolean;
+  user?: User | null;
+  cartItemCount?: number;
+  onSignIn?: () => void;
+  onSignUp?: () => void;
+  onLogout?: () => Promise<void>;
+}
+
+export default function MobileNav({
+  isAuthenticated: propsIsAuthenticated,
+  user: propsUser,
+  cartItemCount: propsCartItemCount,
+  onSignIn: propsOnSignIn,
+  onSignUp: propsOnSignUp,
+  onLogout: propsOnLogout
+}: MobileNavProps = {}) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { totalItems } = useCart();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated: authIsAuthenticated, user: authUser, logout: authLogout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin');
 
-  const menuItems = [
-    { href: '/', label: 'Home' },
-    { href: '/menu', label: 'Menu' },
-    { href: '/order', label: 'Order Now' },
-    { href: '/subscriptions', label: 'Meal Plans' },
-    { href: '/about', label: 'About Us' },
-  ]
+  // Use props if provided, otherwise fall back to context values
+  const isAuthenticated = propsIsAuthenticated !== undefined ? propsIsAuthenticated : authIsAuthenticated;
+  const user = propsUser || authUser;
+  const totalCartItems = propsCartItemCount !== undefined ? propsCartItemCount : totalItems;
+  const logout = propsOnLogout || authLogout;
+  
+  const isAdmin = user?.role === 'admin';
+
+  const regularMenuItems = [
+    { href: '/', label: 'Trang chủ' },
+    { href: '/menu', label: 'Thực đơn' },
+    { href: '/party', label: 'Đặt tiệc' },
+    { href: '/subscriptions', label: 'Đăng ký gói' },
+    { href: '/about', label: 'Giới thiệu' },
+  ];
+  
+  const adminMenuItems = [
+    { href: '/admin/dashboard', label: 'Dashboard' },
+    { href: '/admin/orders', label: 'Manage Orders' },
+    { href: '/admin/menu', label: 'Manage Menu' },
+    { href: '/admin/users', label: 'Manage Users' },
+  ];
+  
+  const menuItems = isAdmin ? adminMenuItems : regularMenuItems;
 
   const openSignIn = () => {
     setIsOpen(false);
-    setAuthModalView('signin');
-    setShowAuthModal(true);
+    if (propsOnSignIn) {
+      propsOnSignIn();
+    } else {
+      setAuthModalView('signin');
+      setShowAuthModal(true);
+    }
   }
   
   const openSignUp = () => {
     setIsOpen(false);
-    setAuthModalView('signup');
-    setShowAuthModal(true);
+    if (propsOnSignUp) {
+      propsOnSignUp();
+    } else {
+      setAuthModalView('signup');
+      setShowAuthModal(true);
+    }
   }
 
   return (
     <>
       <div className="md:hidden">
         <div className="flex items-center">
-          <Link
-            href="/cart"
-            className="relative p-2 mr-2 text-gray-700"
-          >
-            <ShoppingCartIcon className="h-6 w-6" />
-            {totalItems > 0 && (
-              <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">
-                {totalItems}
-              </span>
-            )}
-          </Link>
+          {/* Only show cart for regular users */}
+          {!isAdmin && (
+            <Link
+              href="/cart"
+              className="relative p-2 mr-2 text-gray-700"
+            >
+              <ShoppingCartIcon className="h-6 w-6" />
+              {totalCartItems > 0 && (
+                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">
+                  {totalCartItems}
+                </span>
+              )}
+            </Link>
+          )}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="p-2 text-gray-600 hover:text-gray-900"
@@ -86,35 +137,41 @@ export default function MobileNav() {
                 <div className="border-t border-gray-200 mt-2 pt-2">
                   {isAuthenticated ? (
                     <>
-                      <Link
-                        href="/account/profile"
-                        className="block py-2 text-gray-700 hover:text-green-600"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        href="/account/orders"
-                        className="block py-2 text-gray-700 hover:text-green-600"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        My Orders
-                      </Link>
-                      <Link
-                        href="/account/subscriptions"
-                        className="block py-2 text-gray-700 hover:text-green-600"
-                        onClick={() => setIsOpen(false)}
-                      >
-                        My Subscriptions
-                      </Link>
+                      {!isAdmin && (
+                        <>
+                          <Link
+                            href="/account/profile"
+                            className="block py-2 text-gray-700 hover:text-green-600"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            Profile
+                          </Link>
+                          <Link
+                            href="/account/orders"
+                            className="block py-2 text-gray-700 hover:text-green-600"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            My Orders
+                          </Link>
+                          <Link
+                            href="/account/subscriptions"
+                            className="block py-2 text-gray-700 hover:text-green-600"
+                            onClick={() => setIsOpen(false)}
+                          >
+                            My Subscriptions
+                          </Link>
+                        </>
+                      )}
+                      
+                      <div className="border-t border-gray-100 my-2"></div>
                       <button
                         onClick={() => {
                           logout();
                           setIsOpen(false);
                         }}
-                        className="block w-full text-left py-2 text-red-600 font-medium hover:text-red-700"
+                        className="block w-full text-left py-2 text-gray-700 hover:text-red-600"
                       >
-                        Sign Out
+                        Logout
                       </button>
                     </>
                   ) : (
@@ -140,12 +197,14 @@ export default function MobileNav() {
         </AnimatePresence>
       </div>
       
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-        initialView={authModalView} 
-      />
+      {/* Auth Modal - Only render if we're not using props for authentication */}
+      {!propsOnSignIn && !propsOnSignUp && (
+        <AuthModal 
+          isOpen={showAuthModal} 
+          onClose={() => setShowAuthModal(false)} 
+          initialView={authModalView} 
+        />
+      )}
     </>
   )
 } 

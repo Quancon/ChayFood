@@ -1,14 +1,10 @@
 "use client"
 
 import { useState } from 'react'
-import { useAuth } from '../../context/AuthContext'
+
 import axios from 'axios'
 import { useForm } from 'react-hook-form'
-import { 
-  GoogleIcon, 
-  FacebookIcon 
-} from '../ui/social-icons'
-import { authAPI } from '../../lib/api'
+import { authService } from '../../lib/services'
 
 interface SignUpFormProps {
   onSuccess: () => void
@@ -24,7 +20,6 @@ type FormData = {
 }
 
 export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps) {
-  const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const { 
@@ -43,7 +38,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
   })
   
   // For password confirmation validation
-  const password = watch('password')
+  // const login = watch('password')
   
   const onSubmit = async (data: FormData) => {
     setError('')
@@ -51,7 +46,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
     
     try {
       // Use the authAPI register method
-      const response = await authAPI.register({
+      const response = await authService.register({
         name: data.name,
         email: data.email,
         password: data.password
@@ -76,27 +71,6 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
     }
   }
 
-  const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
-    setIsLoading(true)
-    setError('')
-    
-    try {
-      // Use the authAPI methods for OAuth login
-      if (provider === 'google') {
-        authAPI.initiateGoogleLogin()
-      } else if (provider === 'facebook') {
-        authAPI.initiateFacebookLogin()
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message)
-      } else {
-        setError(`Failed to sign up with ${provider}. Please try again.`)
-      }
-      setIsLoading(false)
-    }
-  }
-  
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Create Account</h2>
@@ -107,38 +81,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
         </div>
       )}
       
-      {/* OAuth providers */}
-      <div className="space-y-3 mb-6">
-        <button
-          type="button"
-          onClick={() => handleOAuthLogin('google')}
-          disabled={isLoading}
-          className="flex items-center justify-center w-full py-2.5 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          <GoogleIcon className="h-5 w-5 mr-2" />
-          <span>Continue with Google</span>
-        </button>
-        
-        <button
-          type="button"
-          onClick={() => handleOAuthLogin('facebook')}
-          disabled={isLoading}
-          className="flex items-center justify-center w-full py-2.5 px-4 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-        >
-          <FacebookIcon className="h-5 w-5 mr-2" />
-          <span>Continue with Facebook</span>
-        </button>
-      </div>
-      
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or continue with email</span>
-        </div>
-      </div>
-      
+  
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -227,7 +170,7 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
             disabled={isLoading}
             {...register('confirmPassword', { 
               required: 'Please confirm your password',
-              validate: value => value === password || 'Passwords do not match'
+              validate: value => value === watch('password') || 'Passwords do not match'
             })}
           />
           {errors.confirmPassword && (
@@ -277,7 +220,10 @@ export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps
         <p className="text-sm text-gray-600">
           Already have an account?{' '}
           <button
-            onClick={onSignInClick}
+            onClick={() => {
+              const event = new CustomEvent('switchAuthView', { detail: 'signin' });
+              window.dispatchEvent(event);
+            }}
             className="text-green-600 hover:text-green-700 font-medium"
             disabled={isLoading}
           >
