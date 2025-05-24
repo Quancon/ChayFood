@@ -13,7 +13,6 @@ import AuthModal from './auth/AuthModal'
 const navLinks = [
   { href: '/', label: 'Trang chủ' },
   { href: '/menu', label: 'Thực đơn' },
-  { href: '/order', label: 'Đặt hàng' },
   { href: '/subscriptions', label: 'Đăng ký gói' },
   { href: '/about', label: 'Giới thiệu' },
 ]

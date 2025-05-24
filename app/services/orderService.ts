@@ -28,14 +28,14 @@ export interface Order {
     additionalInfo?: string;
   };
   paymentStatus: 'pending' | 'paid' | 'failed';
-  paymentMethod: 'cod' | 'card' | 'banking';
+  paymentMethod: 'cod' | 'card' | 'banking' | 'stripe';
   deliveryTime?: string;
   specialInstructions?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-const API_URL = 'http://localhost:5000/';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // Helper function to get auth token
 const getAuthHeader = () => {
@@ -50,7 +50,7 @@ export const orderService = {
   // Lấy tất cả đơn hàng (admin)
   getAll: async (): Promise<Order[]> => {
     try {
-      const response = await axios.get(`${API_URL}/admin/all`, {
+      const response = await axios.get(`${API_URL}/order/admin/all`, {
         headers: getAuthHeader()
       });
       return response.data.data || response.data;
@@ -63,7 +63,7 @@ export const orderService = {
   // Lấy đơn hàng theo ID
   getById: async (id: string): Promise<Order | null> => {
     try {
-      const response = await axios.get(`${API_URL}/${id}`, {
+      const response = await axios.get(`${API_URL}/order/${id}`, {
         headers: getAuthHeader()
       });
       return response.data.data || response.data;
@@ -77,7 +77,7 @@ export const orderService = {
   updateStatus: async (id: string, status: Order['status']): Promise<Order | null> => {
     try {
       const response = await axios.patch(
-        `${API_URL}/${id}/status`, 
+        `${API_URL}/order/${id}/status`, 
         { status },
         { headers: getAuthHeader() }
       );
@@ -92,7 +92,7 @@ export const orderService = {
   cancelOrder: async (id: string): Promise<boolean> => {
     try {
       const response = await axios.patch(
-        `${API_URL}/${id}/cancel`,
+        `${API_URL}/order/${id}/cancel`,
         {},
         { headers: getAuthHeader() }
       );
@@ -106,7 +106,7 @@ export const orderService = {
   // Lọc đơn hàng theo trạng thái
   filterByStatus: async (status: Order['status']): Promise<Order[]> => {
     try {
-      const response = await axios.get(`${API_URL}/admin/all`, {
+      const response = await axios.get(`${API_URL}/order/admin/all`, {
         params: { status },
         headers: getAuthHeader()
       });
@@ -120,7 +120,7 @@ export const orderService = {
   // Tìm kiếm đơn hàng
   search: async (query: string): Promise<Order[]> => {
     try {
-      const response = await axios.get(`${API_URL}/admin/search`, {
+      const response = await axios.get(`${API_URL}/order/admin/search`, {
         params: { query },
         headers: getAuthHeader()
       });
@@ -129,5 +129,36 @@ export const orderService = {
       console.error(`Error searching orders with query ${query}:`, error);
       return [];
     }
-  }
+  },
+
+  // Tạo đơn hàng mới
+  create: async (orderData: any) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/order`,
+        orderData,
+        { headers: { ...getAuthHeader(), 'Content-Type': 'application/json' } }
+      );
+      return response.data;
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        return error.response.data;
+      }
+      return { status: 'error', message: error.message };
+    }
+  },
+
+  // Lấy đơn hàng theo Stripe sessionId
+  getBySessionId: async (sessionId: string): Promise<Order | null> => {
+    try {
+      const response = await axios.get(`${API_URL}/order/by-session/${sessionId}`, {
+        headers: getAuthHeader()
+      });
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error(`Error fetching order by sessionId ${sessionId}:`, error);
+      return null;
+    }
+  },
+
 }; 

@@ -39,7 +39,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     // Prevent multiple fetches within 500ms
     const now = Date.now();
     if (now - lastFetchTimeRef.current < 500) {
-      console.log('Skipping duplicate fetch, already fetched recently');
+      // console.log('Skipping duplicate fetch, already fetched recently');
       return;
     }
     
@@ -55,7 +55,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     
     try {
       const response = await getCart();
-      console.log("Fetched cart data:", response);
+      // console.log("Fetched cart data:", response);
       if (response.success) {
         setItems(response.items || []);
       } else {
@@ -86,7 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== 'undefined' && isAuthenticated) {
       const handleFocus = () => {
-        console.log('Window focused, refreshing cart');
+        // console.log('Window focused, refreshing cart');
         fetchCart();
       };
       
