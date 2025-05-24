@@ -5,15 +5,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import SignInForm from './SignInForm'
 import SignUpForm from './SignUpForm'
+import ForgotPasswordForm from './ForgotPasswordForm'
+import ResetPasswordForm from './ResetPasswordForm'
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  initialView?: 'signin' | 'signup'
+  initialView?: 'signin' | 'signup' | 'forgotPassword' | 'resetPassword'
+  resetToken?: string
 }
 
-export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: AuthModalProps) {
-  const [view, setView] = useState<'signin' | 'signup'>(initialView)
+export default function AuthModal({ 
+  isOpen, 
+  onClose, 
+  initialView = 'signin',
+  resetToken 
+}: AuthModalProps) {
+  const [view, setView] = useState<'signin' | 'signup' | 'forgotPassword' | 'resetPassword'>(initialView)
   
   // Reset to initial view when modal is opened
   useEffect(() => {
@@ -55,7 +63,7 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
   // Handle switch view events from forms
   useEffect(() => {
     const handleSwitchView = (e: Event) => {
-      const customEvent = e as CustomEvent<'signin' | 'signup'>
+      const customEvent = e as CustomEvent<'signin' | 'signup' | 'forgotPassword' | 'resetPassword'>
       setView(customEvent.detail)
     }
     
@@ -65,6 +73,38 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
       window.removeEventListener('switchAuthView', handleSwitchView as EventListener)
     }
   }, [])
+  
+  const renderTitle = () => {
+    switch (view) {
+      case 'signin':
+        return 'Đăng nhập';
+      case 'signup':
+        return 'Đăng ký';
+      case 'forgotPassword':
+        return 'Quên mật khẩu';
+      case 'resetPassword':
+        return 'Đặt lại mật khẩu';
+      default:
+        return 'Tài khoản';
+    }
+  };
+
+  const renderForm = () => {
+    switch (view) {
+      case 'signin':
+        return <SignInForm onSuccess={onClose} />;
+      case 'signup':
+        return <SignUpForm onSuccess={() => setView('signin')} onSignInClick={() => setView('signin')} />;
+      case 'forgotPassword':
+        return <ForgotPasswordForm onClose={onClose} onToggleForm={() => setView('signin')} />;
+      case 'resetPassword':
+        return <ResetPasswordForm onClose={onClose} tokenFromProps={resetToken} />;
+      default:
+        return <SignInForm onSuccess={onClose} />;
+    }
+  };
+
+  const showTabs = view !== 'forgotPassword' && view !== 'resetPassword';
   
   return (
     <AnimatePresence>
@@ -98,38 +138,40 @@ export default function AuthModal({ isOpen, onClose, initialView = 'signin' }: A
                   <XMarkIcon className="h-6 w-6" />
                 </button>
                 
-                <div className="flex space-x-4 border-b border-gray-200">
-                  <button
-                    onClick={() => setView('signin')}
-                    className={`pb-3 px-2 -mb-px transition-colors ${
-                      view === 'signin'
-                        ? 'border-b-2 border-green-500 text-green-600 font-medium'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Sign In
-                  </button>
-                  
-                  <button
-                    onClick={() => setView('signup')}
-                    className={`pb-3 px-2 -mb-px transition-colors ${
-                      view === 'signup'
-                        ? 'border-b-2 border-green-500 text-green-600 font-medium'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Sign Up
-                  </button>
-                </div>
+                {showTabs ? (
+                  <div className="flex space-x-4 border-b border-gray-200">
+                    <button
+                      onClick={() => setView('signin')}
+                      className={`pb-3 px-2 -mb-px transition-colors ${
+                        view === 'signin'
+                          ? 'border-b-2 border-green-500 text-green-600 font-medium'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Sign In
+                    </button>
+                    
+                    <button
+                      onClick={() => setView('signup')}
+                      className={`pb-3 px-2 -mb-px transition-colors ${
+                        view === 'signup'
+                          ? 'border-b-2 border-green-500 text-green-600 font-medium'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border-b border-gray-200 pb-3">
+                    <h2 className="text-xl font-semibold">{renderTitle()}</h2>
+                  </div>
+                )}
               </div>
               
               {/* Body */}
               <div className="p-6">
-                {view === 'signin' ? (
-                  <SignInForm />
-                ) : (
-                  <SignUpForm onSuccess={onClose} onSignInClick={() => setView('signin')} />
-                )}
+                {renderForm()}
               </div>
             </motion.div>
           </motion.div>

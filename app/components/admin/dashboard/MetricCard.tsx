@@ -10,7 +10,6 @@ interface MetricCardProps {
   trend: 'up' | 'down' | 'neutral';
   icon: ReactNode;
   color: string;
-  textColor: string;
   iconColor: string;
 }
 
@@ -21,7 +20,6 @@ export default function MetricCard({
   trend,
   icon,
   color,
-  textColor,
   iconColor,
 }: MetricCardProps) {
   return (

@@ -10,7 +10,7 @@ import Image from 'next/image';
 
 export default function OrderPage() {
   const { items, totalAmount, clearCart, isCartEmpty } = useCart();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function OrderPage() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=order');
+      // router.push('/login?redirect=order');
       return;
     }
 

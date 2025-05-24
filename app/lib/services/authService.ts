@@ -24,7 +24,8 @@ export const authService = {
             const userData = JSON.parse(localStorage.getItem('currentUser') || '');
             return { isAuthenticated: true, user: userData };
           } catch (e) {
-            // Không làm gì nếu parse lỗi
+            console.error('Error parsing currentUser:', e);
+            return { isAuthenticated: false, user: null };
           }
         }
         return { isAuthenticated: !!localStorage.getItem('authToken'), user: null };
@@ -52,7 +53,7 @@ export const authService = {
         }
         return response.data;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('checkStatus error:', error);
       authService._isCheckingAuth = false;
       return { isAuthenticated: false, user: null };
@@ -78,7 +79,7 @@ export const authService = {
         console.error('API: Login failed - no token in response');
         return false;
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('API: Login error:', error);
       return false;
     }
@@ -98,7 +99,7 @@ export const authService = {
         setAuthCookie(response.data.token);
       }
       return response.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Register error:', error);
       throw error;
     }
@@ -107,7 +108,7 @@ export const authService = {
   logout: async () => {
     try {
       await api.get('/auth/logout');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error during logout:', error);
     } finally {
       localStorage.removeItem('authToken');
@@ -116,6 +117,42 @@ export const authService = {
         document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       }
       return { success: true };
+    }
+  },
+  
+  // Password reset functionality
+  forgotPassword: async (email: string) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return { 
+        success: true, 
+        message: response.data.message || 'Email đã được gửi với hướng dẫn đặt lại mật khẩu.'
+      };
+    } catch (error: any) {
+      console.error('Error sending password reset email:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Không thể gửi email đặt lại mật khẩu.' 
+      };
+    }
+  },
+  
+  resetPassword: async (token: string, newPassword: string) => {
+    try {
+      const response = await api.post('/auth/reset-password', { 
+        token, 
+        newPassword 
+      });
+      return { 
+        success: true, 
+        message: response.data.message || 'Mật khẩu đã được đặt lại thành công.' 
+      };
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Không thể đặt lại mật khẩu.' 
+      };
     }
   },
   

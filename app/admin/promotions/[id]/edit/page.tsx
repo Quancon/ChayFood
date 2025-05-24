@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { useApi } from '@/hooks/useApi';
 import { promotionService } from '@/lib/services';
 import { Promotion } from '@/lib/services/types';
 import PromotionForm from '@/components/admin/promotions/PromotionForm';
@@ -26,9 +25,10 @@ export default function EditPromotionPage({ params }: EditPromotionPageProps) {
       try {
         const response = await promotionService.getById(params.id);
         setPromotion(response.data as Promotion);
-      } catch (err: any) {
-        console.error('Error fetching promotion:', err);
-        setError(err.message || 'Failed to load promotion');
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        console.error('Error fetching promotion:', error);
+        setError(error.message || 'Failed to load promotion');
       } finally {
         setIsLoading(false);
       }

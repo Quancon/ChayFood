@@ -4,61 +4,42 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingCartIcon, UserIcon } from '@heroicons/react/24/outline'
+import { UserIcon } from '@heroicons/react/24/outline'
 import { useCart } from '../hooks/useCart'
 import { useAuth } from '../context/AuthContext'
 import MobileNav from './MobileNav'
 import AuthModal from './auth/AuthModal'
 
-interface NavLinkProps {
-  href: string
-  children: React.ReactNode
-  className?: string
-}
-
-const NavLink = ({ href, children, className = '' }: NavLinkProps) => {
-  const pathname = usePathname()
-  const isActive = pathname === href
-  
-  return (
-    <Link
-      href={href}
-      className={`${className} ${
-        isActive 
-          ? 'text-green-600 font-medium' 
-          : 'text-gray-700 hover:text-green-600'
-      } transition-colors`}
-    >
-      {children}
-    </Link>
-  )
-}
+const navLinks = [
+  { href: '/', label: 'Trang chủ' },
+  { href: '/menu', label: 'Thực đơn' },
+  { href: '/order', label: 'Đặt hàng' },
+  { href: '/subscriptions', label: 'Đăng ký gói' },
+  { href: '/about', label: 'Giới thiệu' },
+]
 
 export default function Navbar() {
   const pathname = usePathname()
+  const { user, isAuthenticated, logout, isLoading, refreshAuthState } = useAuth()
+  const [scrolled, setScrolled] = useState(false)
+  const { totalItems } = useCart()
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin')
+  const [lastRefresh, setLastRefresh] = useState<number | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
   // Hide navbar completely on admin pages
   if (pathname?.startsWith('/admin')) {
     return null
   }
   
-  const [scrolled, setScrolled] = useState(false)
-  const { totalItems } = useCart()
-  const { isAuthenticated, user, logout, isLoading, refreshAuthState } = useAuth()
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin')
-  const [lastRefresh, setLastRefresh] = useState(Date.now())
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  
-  const isAdmin = user?.role === 'admin'
-  
   // Try refreshing auth state on mount if we have a token but no user
   useEffect(() => {
     const checkAuthState = async () => {
       // Kiểm tra nếu đang refresh, hoặc đã refresh gần đây, tránh lặp vô hạn
       const now = Date.now();
-      if (isRefreshing || now - lastRefresh < 5000) {
+      if (isRefreshing || now - (lastRefresh ?? 0) < 5000) {
         return;
       }
       
@@ -127,40 +108,41 @@ export default function Navbar() {
             
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              {isAdmin ? (
-                <>
-                  <NavLink href="/admin/dashboard">Dashboard</NavLink>
-                  <NavLink href="/admin/orders">Manage Orders</NavLink>
-                  <NavLink href="/admin/menu">Manage Menu</NavLink>
-                  <NavLink href="/admin/users">Manage Users</NavLink>
-                </>
-              ) : (
-                <>
-                  <NavLink href="/">Trang chủ</NavLink>
-                  <NavLink href="/menu">Thực đơn</NavLink>
-                  <NavLink href="/order">Đặt hàng</NavLink>
-                  <NavLink href="/subscriptions">Đăng ký gói</NavLink>
-                  <NavLink href="/about">Giới thiệu</NavLink>
-                </>
-              )}
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`transition-colors ${
+                    pathname === link.href
+                      ? 'text-green-600 font-medium'
+                      : 'text-gray-700 hover:text-green-600'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </nav>
             
             {/* Right side buttons - desktop */}
             <div className="hidden md:flex items-center space-x-4">
-              {/* Cart button - only show for regular users */}
-              {!isAdmin && (
-                <Link
-                  href="/cart"
-                  className="relative p-2 text-gray-700 hover:text-green-600 transition-colors"
-                >
-                  <ShoppingCartIcon className="h-6 w-6" />
-                  {totalItems > 0 && (
-                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">
-                      {totalItems}
-                    </span>
-                  )}
-                </Link>
-              )}
+              {/* Cart button */}
+              <Link
+                href="/cart"
+                className="relative p-2 text-gray-700 hover:text-green-600 transition-colors"
+              >
+                <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-1.35 2.7A2 2 0 007.48 19h9.04a2 2 0 001.83-1.3L17 13M7 13V6h10v7"
+                  />
+                </svg>
+                {totalItems > 0 && (
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-500 rounded-full">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
               
               {/* User account */}
               {isAuthenticated ? (
@@ -187,65 +169,27 @@ export default function Navbar() {
                         className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {isAdmin ? (
-                          // Admin menu items
-                          <>
-                            <Link
-                              href="/admin/dashboard"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              Dashboard
-                            </Link>
-                            <Link
-                              href="/admin/orders"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              Manage Orders
-                            </Link>
-                            <Link
-                              href="/admin/menu"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              Manage Menu
-                            </Link>
-                            <Link
-                              href="/admin/users"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              Manage Users
-                            </Link>
-                          </>
-                        ) : (
-                          // Regular user menu items
-                          <>
-                            <Link
-                              href="/account/profile"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              Profile
-                            </Link>
-                            <Link
-                              href="/account/orders"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              My Orders
-                            </Link>
-                            <Link
-                              href="/account/subscriptions"
-                              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                              onClick={() => setShowUserMenu(false)}
-                            >
-                              My Subscriptions
-                            </Link>
-                          </>
-                        )}
-                        
+                        <Link
+                          href="/account/profile"
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          Profile
+                        </Link>
+                        <Link
+                          href="/account/orders"
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          My Orders
+                        </Link>
+                        <Link
+                          href="/account/subscriptions"
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          My Subscriptions
+                        </Link>
                         <div className="border-t border-gray-100 my-1"></div>
                         <button
                           onClick={() => {

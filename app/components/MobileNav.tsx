@@ -35,13 +35,13 @@ export default function MobileNav({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { totalItems } = useCart();
-  const { isAuthenticated: authIsAuthenticated, user: authUser, logout: authLogout } = useAuth();
+  const { isAuthenticated: authIsAuthenticated, logout: authLogout } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalView, setAuthModalView] = useState<'signin' | 'signup'>('signin');
 
   // Use props if provided, otherwise fall back to context values
   const isAuthenticated = propsIsAuthenticated !== undefined ? propsIsAuthenticated : authIsAuthenticated;
-  const user = propsUser || authUser;
+  const user = propsUser;
   const totalCartItems = propsCartItemCount !== undefined ? propsCartItemCount : totalItems;
   const logout = propsOnLogout || authLogout;
   

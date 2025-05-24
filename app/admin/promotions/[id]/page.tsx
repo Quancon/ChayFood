@@ -23,7 +23,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 interface PromotionDetailPageProps {
@@ -32,10 +31,16 @@ interface PromotionDetailPageProps {
   };
 }
 
+interface PromotionStats {
+  usagePercentage: string | number;
+  daysRemaining: string | number;
+  isExpired: boolean;
+}
+
 export default function PromotionDetailPage({ params }: PromotionDetailPageProps) {
   const router = useRouter();
   const [promotion, setPromotion] = useState<Promotion | null>(null);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<PromotionStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -45,10 +50,11 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
       try {
         const response = await promotionService.getStats(params.id);
         setPromotion(response.data.promotion);
-        setStats(response.data.stats);
-      } catch (err: any) {
-        console.error('Error fetching promotion:', err);
-        setError(err.message || 'Failed to load promotion');
+        setStats(response.data.stats as PromotionStats);
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        console.error('Error fetching promotion:', error);
+        setError(error.message || 'Failed to load promotion');
       } finally {
         setIsLoading(false);
       }
@@ -61,9 +67,10 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
     try {
       await promotionService.delete(params.id);
       router.push('/admin/promotions');
-    } catch (err: any) {
-      console.error('Error deleting promotion:', err);
-      setError(err.message || 'Failed to delete promotion');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error('Error deleting promotion:', error);
+      setError(error.message || 'Failed to delete promotion');
     }
   };
 
@@ -194,22 +201,22 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
                 </p>
               </div>
               
-              {promotion.minOrderValue > 0 && (
+              {typeof promotion.minOrderValue === 'number' && promotion.minOrderValue > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Minimum Order</h3>
                   <p className="mt-1 flex items-center">
                     <ShoppingCartIcon className="h-5 w-5 text-gray-400 mr-1" />
-                    {promotion.minOrderValue.toLocaleString()} VND
+                    {promotion.minOrderValue?.toLocaleString()} VND
                   </p>
                 </div>
               )}
               
-              {promotion.type === 'percentage' && promotion.maxDiscount > 0 && (
+              {promotion.type === 'percentage' && typeof promotion.maxDiscount === 'number' && promotion.maxDiscount > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500">Maximum Discount</h3>
                   <p className="mt-1 flex items-center">
                     <CheckCircleIcon className="h-5 w-5 text-gray-400 mr-1" />
-                    Up to {promotion.maxDiscount.toLocaleString()} VND
+                    Up to {promotion.maxDiscount?.toLocaleString()} VND
                   </p>
                 </div>
               )}
@@ -245,7 +252,7 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
           <CardContent className="space-y-6">
             <div className="text-center py-4">
               <div className="text-4xl font-bold text-green-600">
-                {stats.usagePercentage}
+                {stats?.usagePercentage}
               </div>
               <p className="text-sm text-gray-500 mt-1">
                 Usage Rate
@@ -272,7 +279,7 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
                   <p className="text-xs text-gray-500">Remaining Codes</p>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-amber-600">{stats.daysRemaining}</p>
+                  <p className="text-2xl font-bold text-amber-600">{stats?.daysRemaining}</p>
                   <p className="text-xs text-gray-500">Days Remaining</p>
                 </div>
               </div>
@@ -284,7 +291,7 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
                 <Badge className={status.color}>
                   {status.label}
                 </Badge>
-                {stats.isExpired && <span className="text-sm text-red-500">Expired</span>}
+                {stats?.isExpired && <span className="text-sm text-red-500">Expired</span>}
               </div>
             </div>
           </CardContent>
@@ -302,7 +309,7 @@ export default function PromotionDetailPage({ params }: PromotionDetailPageProps
           <DialogHeader>
             <DialogTitle>Delete Promotion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the promotion "{promotion.name}"? This action cannot be undone.
+              Are you sure you want to delete the promotion &quot;{promotion.name}&quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-3 pt-4">

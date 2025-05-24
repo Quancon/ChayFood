@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '../hooks/useCart';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import type { CartItem } from '../lib/actions/cartActions';
 
 // Hàm format tiền tệ VND
 const formatCurrency = (amount: number) => {
@@ -28,7 +29,7 @@ export default function CartPage() {
   } = useCart();
   
   const router = useRouter();
-  const [safeItems, setSafeItems] = useState<any[]>([]);
+  const [safeItems, setSafeItems] = useState<CartItem[]>([]);
 
   // Đảm bảo items là mảng và cập nhật safeItems
   useEffect(() => {
@@ -101,7 +102,7 @@ export default function CartPage() {
                   <div className="flex-grow ml-4">
                     <div className="flex justify-between">
                       <h3 className="font-medium">
-                        {item.menuItem?.name || (item.name || 'Sản phẩm')}
+                        {item.menuItem?.name || 'Sản phẩm'}
                       </h3>
                       <p className="font-semibold">
                         {formatCurrency((item.menuItem?.price || 0) * (item.quantity || 0))}

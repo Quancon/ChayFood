@@ -66,8 +66,8 @@ const testApiConnection = async () => {
     });
     console.log('DEBUG: API connection test successful:', response.status, response.statusText);
     return true;
-  } catch (error: any) {
-    console.error('DEBUG: API connection test failed:', error.message);
+  } catch (error: unknown) {
+    console.error('DEBUG: API connection test failed:', error);
     return false;
   }
 };
@@ -85,15 +85,6 @@ const getAuthHeader = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
   return {};
-};
-
-// Logging function for debugging
-const logDebug = (message: string, data?: any) => {
-  if (DEBUG_MODE) {
-    console.group(`🔍 ${message}`);
-    if (data) console.log(data);
-    console.groupEnd();
-  }
 };
 
 // Tạo instance axios với cấu hình chung
@@ -164,14 +155,22 @@ apiClient.interceptors.response.use(
 );
 
 // Prepare filter parameters for API calls
+interface FilterParams {
+  timeRange?: string;
+  region?: string;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 const prepareParams = (
   timeRange?: string,
   region?: string,
   category?: string,
   startDate?: string | null,
   endDate?: string | null
-) => {
-  const params: any = {};
+): FilterParams => {
+  const params: FilterParams = {};
   
   if (timeRange) params.timeRange = timeRange;
   if (region && region !== 'all') params.region = region;
@@ -189,37 +188,21 @@ const prepareParams = (
   return params;
 };
 
-// Function to handle API errors with fallback data
-const handleApiError = <T>(
-  error: any, 
-  endpoint: string, 
-  fallbackData: T, 
-  params?: any
-): T => {
-  console.error(`Error fetching from ${endpoint}:`, error);
-  logDebug('Using fallback data for', { endpoint, params });
-  return fallbackData;
-};
-
 // Helper function to parse API response safely
-const parseResponse = <T>(response: any): T => {
+const parseResponse = <T>(response: unknown): T => {
   console.log('DEBUG: Parsing API response');
-  console.log('DEBUG: Response type:', typeof response.data);
-  
-  if (typeof response.data === 'object') {
-    // If response already has data in expected format, return it directly
-    if (!response.data.data) {
-      console.log('DEBUG: Response contains direct data format');
-      return response.data;
+  if (response && typeof response === 'object') {
+    // Nếu response có property data
+    if ('data' in response && response.data !== undefined) {
+      console.log('DEBUG: Response contains wrapped data format');
+      return (response as { data: T }).data;
     }
-    
-    // If response is wrapped in a data property, return data.data
-    console.log('DEBUG: Response contains wrapped data format');
-    return response.data.data;
+    // Nếu response là object đúng format
+    console.log('DEBUG: Response contains direct data format');
+    return response as T;
   }
-  
   console.log('DEBUG: Unexpected response format, returning raw data');
-  return response.data;
+  return response as T;
 };
 
 export const analyticsService = {
@@ -242,7 +225,7 @@ export const analyticsService = {
       });
       
       return parseResponse<OrderStats>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching order statistics:', error);
       throw error;
     }
@@ -266,7 +249,7 @@ export const analyticsService = {
       });
       
       return parseResponse<CustomerStats>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching customer statistics:', error);
       throw error;
     }
@@ -291,7 +274,7 @@ export const analyticsService = {
       });
       
       return parseResponse<PopularDish[]>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching popular dishes:', error);
       throw error;
     }
@@ -316,7 +299,7 @@ export const analyticsService = {
       });
       
       return parseResponse<OrderTrend[]>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching order trends:', error);
       throw error;
     }
@@ -340,7 +323,7 @@ export const analyticsService = {
       });
       
       return parseResponse<RegionalOrder[]>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching regional orders:', error);
       throw error;
     }

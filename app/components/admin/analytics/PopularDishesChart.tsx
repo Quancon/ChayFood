@@ -31,7 +31,7 @@ export default function PopularDishesChart() {
 
   return (
     <div className="space-y-3">
-      {topDishes.map((dish, index) => (
+      {topDishes.map((dish) => (
         <div key={dish.id} className="mb-3">
           <div className="flex justify-between items-center text-sm mb-1">
             <div className="font-medium">{dish.name}</div>

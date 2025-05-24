@@ -12,7 +12,7 @@ interface ApiResponse<T> {
 export function useApi<T>(
   apiCall: () => Promise<T>,
   immediate = true,
-  deps: any[] = [] // Add dependencies array
+  deps: unknown[] = [] // Add dependencies array, type unknown[]
 ): ApiResponse<T | null> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(immediate);
@@ -21,6 +21,8 @@ export function useApi<T>(
   // Use ref to track if the component is mounted
   const isMounted = useRef(true);
 
+  // WARNING: Dynamic dependencies (deps) are not statically checked by React linter.
+  //          Make sure to pass all necessary dependencies manually.
   const fetchData = useCallback(async () => {
     if (!isMounted.current) return;
     
@@ -42,7 +44,7 @@ export function useApi<T>(
         setLoading(false);
       }
     }
-  }, [apiCall, ...deps]); // Include custom dependencies
+  }, [apiCall]); // Only apiCall is statically checked. Dynamic deps are handled in useEffect below.
 
   // Initial fetch if immediate is true
   useEffect(() => {
@@ -54,7 +56,8 @@ export function useApi<T>(
     return () => {
       isMounted.current = false;
     };
-  }, [fetchData, immediate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchData, immediate, ...deps]); // Dynamic deps are spread here for runtime effect
 
   // Reset isMounted on re-mount
   useEffect(() => {

@@ -300,10 +300,10 @@ export async function clearCart() {
 }
 
 // Update the normalizeCartItems function to be async
-export async function normalizeCartItems(items: any[]): Promise<CartItem[]> {
+export async function normalizeCartItems(items: unknown[]): Promise<CartItem[]> {
   if (!Array.isArray(items)) return [];
   
-  return items.map(item => {
+  return items.map((item: any) => {
     // Ensure we have a valid menuItem object
     const menuItem = item.menuItem || {};
     

@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import Image from "next/image"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ShoppingCart, Star, Clock, Info, ArrowLeft } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -64,8 +64,7 @@ export default function MenuItemDetail() {
             }
           }
         }
-      } catch (error) {
-        console.error("Error fetching menu item:", error)
+      } catch {
         toast.error("Không thể tải thông tin món ăn")
       } finally {
         setLoading(false)
@@ -85,7 +84,7 @@ export default function MenuItemDetail() {
         setReviews(data.reviews)
         setTotalReviews(data.totalReviews)
         setAverageRating(data.averageRating)
-      } catch (error) {
+      } catch {
         setReviews([])
         setTotalReviews(0)
         setAverageRating(0)
@@ -107,7 +106,7 @@ export default function MenuItemDetail() {
     try {
       await addToCartWithMessage(item, quantity)
       toast.success(`Đã thêm ${quantity} ${item.name} vào giỏ hàng`)
-    } catch (error) {
+    } catch {
       toast.error("Không thể thêm vào giỏ hàng")
     }
   }
@@ -144,7 +143,7 @@ export default function MenuItemDetail() {
       } else {
         setReviewError("Không thể gửi đánh giá hoặc bạn đã đánh giá món này rồi.")
       }
-    } catch (error) {
+    } catch {
       toast.error("Không thể gửi đánh giá")
     } finally {
       setSubmittingReview(false)

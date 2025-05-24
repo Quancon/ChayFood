@@ -30,7 +30,7 @@ export interface Review {
         }
       }
       return { reviews: [], totalReviews: 0, averageRating: 0 }
-    } catch (error) {
+    } catch {
       return { reviews: [], totalReviews: 0, averageRating: 0 }
     }
   }
@@ -45,7 +45,7 @@ export interface Review {
         return data.data
       }
       return []
-    } catch (error) {
+    } catch {
       return []
     }
   }
@@ -65,7 +65,7 @@ export interface Review {
         return data.data
       }
       return null
-    } catch (error) {
+    } catch {
       return null
     }
   }
@@ -85,7 +85,7 @@ export interface Review {
         return data.data
       }
       return null
-    } catch (error) {
+    } catch {
       return null
     }
   }
@@ -98,7 +98,7 @@ export interface Review {
       })
       const data = await res.json()
       return !!data.success
-    } catch (error) {
+    } catch {
       return false
     }
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { analyticsService } from '@/services/analyticsService';
 import { OrderStats, CustomerStats, PopularDish, OrderTrend, RegionalOrder } from '@/services/analyticsService';
 
@@ -26,7 +26,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   console.log('DEBUG: AnalyticsProvider rendering');
   
   const searchParams = useSearchParams();
-  const router = useRouter();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetchTime, setLastFetchTime] = useState<Date | null>(null);
@@ -86,15 +86,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   
   console.log('DEBUG: AnalyticsProvider params:', { timeRange, region, category, startDate, endDate });
 
-  // Track individual loading states for better debugging
-  const [loadingStates, setLoadingStates] = useState({
-    orderStats: false,
-    customerStats: false, 
-    popularDishes: false,
-    orderTrends: false,
-    regionalData: false
-  });
-
   // Use useCallback to prevent re-creating function on each render
   const fetchData = useCallback(async () => {
     console.log('DEBUG: fetchData called');
@@ -109,15 +100,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     setOrderTrends(null);
     setRegionalData(null);
     
-    // Reset individual loading states
-    setLoadingStates({
-      orderStats: true,
-      customerStats: true,
-      popularDishes: true,
-      orderTrends: true,
-      regionalData: true
-    });
-
     // Debug info
     console.log('DEBUG: Starting analytics data fetch with parameters:',
       { timeRange, region, category, startDate, endDate });
@@ -195,12 +177,12 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         console.error(`DEBUG: ${failedRequests.length} out of ${results.length} data requests failed`);
         
         // Get more detailed error messages from each failed request
-        const errorDetails = failedRequests.map((result: any) => {
-          const err = result.reason;
+        const errorDetails = failedRequests.map((result: unknown) => {
+          const err = (result as { reason?: any }).reason;
           // Extract detailed error message from API response if available
-          if (err.response && err.response.data && err.response.data.message) {
+          if (err && err.response && err.response.data && err.response.data.message) {
             return err.response.data.message;
-          } else if (err.message) {
+          } else if (err && err.message) {
             return err.message;
           }
           return 'Unknown error';
@@ -215,18 +197,11 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       // Update last fetch timestamp
       setLastFetchTime(new Date());
       
-    } catch (err: any) {
-      console.error('DEBUG: Error fetching analytics data:', err);
-      setError(err.message || 'Failed to load analytics data. Please try again later.');
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      console.error('DEBUG: Error fetching analytics data:', error);
+      setError(error.message || 'Failed to load analytics data. Please try again later.');
     } finally {
-      // Update loading states
-      setLoadingStates({
-        orderStats: false,
-        customerStats: false,
-        popularDishes: false,
-        orderTrends: false,
-        regionalData: false
-      });
       setIsLoading(false);
       
       // Log performance

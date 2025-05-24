@@ -144,7 +144,7 @@ export default function MenuPage() {
       if (category) {
         // Check if category is object or string
         const itemCategoryId = typeof item.category === 'object' 
-          ? (item.category as any)?._id 
+          ? (item.category as { _id?: string })?._id 
           : item.category;
         
         console.log(`Comparing category: item=${itemCategoryId}, selected=${category}`);
@@ -274,7 +274,7 @@ export default function MenuPage() {
       setExcludedIngredients(prev => [...prev, ingredientInput.trim()]);
       setIngredientInput('');
     }
-  }, [ingredientInput]);
+  }, [ingredientInput, excludedIngredients]);
 
   // Handler for removing excluded ingredients
   const handleRemoveIngredient = useCallback((ingredient: string) => {

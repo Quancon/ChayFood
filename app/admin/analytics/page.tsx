@@ -26,7 +26,6 @@ function AnalyticsHeader() {
   
   const { refreshData, isLoading, lastFetchTime } = useAnalytics();
   const [debugMode, setDebugMode] = useState(false);
-  const [authToken, setAuthToken] = useState<string | null>(null);
   const [testingApi, setTestingApi] = useState(false);
   const [apiStatus, setApiStatus] = useState<{success: boolean, message: string} | null>(null);
   
@@ -40,7 +39,6 @@ function AnalyticsHeader() {
       
       // Check auth token
       const token = localStorage.getItem('authToken');
-      setAuthToken(token);
       
       if (!token) {
         console.error('DEBUG: No auth token found in localStorage');
@@ -80,11 +78,12 @@ function AnalyticsHeader() {
           message: `API returned error: ${response.status} ${response.statusText}`
         });
       }
-    } catch (error: any) {
-      console.error('DEBUG: API connection test failed:', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('DEBUG: API connection test failed:', err?.message);
       setApiStatus({
         success: false,
-        message: `API connection failed: ${error.message}`
+        message: `API connection failed: ${err?.message}`
       });
     } finally {
       setTestingApi(false);
@@ -195,8 +194,7 @@ function AnalyticsHeader() {
 }
 
 function AnalyticsContent() {
-  const searchParams = useSearchParams();
-  const { error, isLoading } = useAnalytics();
+  const { error } = useAnalytics();
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState<{success: boolean, message: string} | null>(null);
   
@@ -227,11 +225,12 @@ function AnalyticsContent() {
           message: `API returned error: ${response.status} ${response.statusText}`
         });
       }
-    } catch (error: any) {
-      console.error('DEBUG: API connection test failed:', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      console.error('DEBUG: API connection test failed:', err?.message);
       setApiStatus({
         success: false,
-        message: `API connection failed: ${error.message}`
+        message: `API connection failed: ${err?.message}`
       });
     }
   };

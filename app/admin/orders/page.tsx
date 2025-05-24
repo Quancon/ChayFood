@@ -10,11 +10,6 @@ export default function OrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState('')
 
-  // Fetch orders on component mount
-  useEffect(() => {
-    fetchOrders()
-  }, [])
-
   // Fetch orders based on current filters
   const fetchOrders = async () => {
     setLoading(true)
@@ -22,7 +17,7 @@ export default function OrdersPage() {
       let result: Order[] = []
       
       if (statusFilter) {
-        result = await orderService.filterByStatus(statusFilter as any)
+        result = await orderService.filterByStatus(statusFilter as Order["status"])
       } else if (searchQuery) {
         result = await orderService.search(searchQuery)
       } else {
@@ -31,13 +26,18 @@ export default function OrdersPage() {
       
       setOrders(result)
       setError('')
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to fetch orders:', err)
       setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.')
     } finally {
       setLoading(false)
     }
   }
+
+  // Fetch orders on component mount
+  useEffect(() => {
+    fetchOrders()
+  }, [fetchOrders])
 
   // Handle status change
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {

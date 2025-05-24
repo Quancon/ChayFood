@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { MenuItem } from '../lib/services/types';
 import { CartItem } from '../lib/actions/cartActions';
 import { 
@@ -31,12 +31,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const lastFetchTimeRef = useRef<number>(0);
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Lấy giỏ hàng từ server
-  const fetchCart = async () => {
+  const fetchCart = useCallback(async () => {
     // Prevent multiple fetches within 500ms
     const now = Date.now();
     if (now - lastFetchTimeRef.current < 500) {
@@ -70,17 +69,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   // Add a refresh function that can be called from outside
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     await fetchCart();
-  };
+  }, [fetchCart]);
 
   // Load cart khi component mount và khi auth state thay đổi
   useEffect(() => {
     fetchCart();
-  }, [isAuthenticated, user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // Forced refresh on window focus to keep cart in sync
   useEffect(() => {
@@ -96,7 +96,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         window.removeEventListener('focus', handleFocus);
       };
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchCart]);
 
   // Add single item to cart
   const addItem = async (menuItem: MenuItem, quantity: number, specialInstructions?: string) => {
@@ -248,7 +248,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       console.log('First item structure:', JSON.stringify(items[0], null, 2));
       console.log('Total Items:', totalItems);
     }
-  }, [items]);
+  }, [items, totalItems]);
     
   const totalAmount = Array.isArray(items) 
     ? items.reduce((total, item) => {
