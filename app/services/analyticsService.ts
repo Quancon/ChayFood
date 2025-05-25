@@ -48,8 +48,7 @@ export interface RegionalOrder {
 }
 
 // Cấu hình URL API từ biến môi trường hoặc mặc định
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-const API_URL = `${BASE_API_URL}/api/analytics`;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // Log API URL for debugging
 console.log('DEBUG: Analytics API URL:', API_URL);
@@ -61,7 +60,7 @@ const DEBUG_MODE = true;
 const testApiConnection = async () => {
   try {
     console.log('DEBUG: Testing API connection...');
-    const response = await axios.get(`${BASE_API_URL}/`, {
+    const response = await axios.get(`${API_URL}/`, {
       timeout: 5000
     });
     console.log('DEBUG: API connection test successful:', response.status, response.statusText);
@@ -219,7 +218,7 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/orders/stats', {
+      const response = await apiClient.get('/analytics/orders/stats', {
         params,
         headers: getAuthHeader()
       });
@@ -243,7 +242,7 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, undefined, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/customers/stats', {
+      const response = await apiClient.get('/analytics/customers/stats', {
         params,
         headers: getAuthHeader()
       });
@@ -268,7 +267,7 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/dishes/popular', {
+      const response = await apiClient.get('/analytics/dishes/popular', {
         params,
         headers: getAuthHeader()
       });
@@ -293,7 +292,7 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/orders/trends', {
+      const response = await apiClient.get('/analytics/orders/trends', {
         params,
         headers: getAuthHeader()
       });
@@ -317,7 +316,7 @@ export const analyticsService = {
     const params = prepareParams(timeRange, undefined, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/orders/regional', {
+      const response = await apiClient.get('/analytics/orders/regional', {
         params,
         headers: getAuthHeader()
       });
@@ -340,5 +339,5 @@ export const analyticsService = {
   // Check if debug mode is enabled
   isDebugMode: () => {
     return DEBUG_MODE || (typeof window !== 'undefined' && window.localStorage.getItem('analyticsDebugMode') === 'true');
-  }
+  },
 }; 

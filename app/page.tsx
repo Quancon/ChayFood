@@ -1,4 +1,5 @@
 "use client"
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Environmental from './components/Environmental'
@@ -6,35 +7,33 @@ import Testimonials from './components/Testimonials'
 import Partners from './components/Partners'
 import { useRedirectByRole } from './hooks/useRedirectByRole'
 import Link from 'next/link'
-
-const products = [
-  {
-    id: 1,
-    name: "Fresh Salad Bowl",
-    description: "Mixed greens with quinoa, avocado, and citrus dressing",
-    price: "$12.99",
-    image: "/meals/meal1.jpg"
-  },
-  {
-    id: 2,
-    name: "Roasted Veggie Mix",
-    description: "Seasonal vegetables roasted with herbs and olive oil",
-    price: "$10.99",
-    image: "/meals/meal2.jpg"
-  },
-  {
-    id: 3,
-    name: "Protein Power Bowl",
-    description: "Grilled chicken with sweet potatoes and broccoli",
-    price: "$14.99",
-    image: "/meals/meal3.jpg"
-  }
-]
+import { analyticsService } from './services/analyticsService'
+import { MenuItemCard } from './components/ui/menu-item-card';
 
 export default function Home() {
   // This hook will automatically redirect admin users to the admin dashboard
   useRedirectByRole({ adminRedirect: '/admin' });
   
+  const [popularDishes, setPopularDishes] = useState<any[]>([]);
+  const [loadingPopular, setLoadingPopular] = useState(true);
+  const [errorPopular, setErrorPopular] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchPopularDishes() {
+      setLoadingPopular(true);
+      setErrorPopular(null);
+      try {
+        const data = await analyticsService.getPopularDishes();
+        setPopularDishes(Array.isArray(data) ? data.slice(0, 3) : []);
+      } catch (err: any) {
+        setErrorPopular('Không thể tải món ăn bán chạy.');
+      } finally {
+        setLoadingPopular(false);
+      }
+    }
+    fetchPopularDishes();
+  }, []);
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -69,39 +68,56 @@ export default function Home() {
       </section>
 
       {/* Featured Products */}
-      <section className="section bg-background-light">
+      {/* <section className="section bg-background-light">
+        ...phần sản phẩm bán chạy cũ...
+      </section> */}
+
+      {/* Popular Dishes Section */}
+      <section className="section">
         <div className="container">
-          <h2 className="section-title">Sản phẩm tiêu biểu</h2>
+          <h2 className="section-title flex items-center gap-2">
+            Món ăn bán chạy
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="card"
-              >
-                <div className="relative h-48">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    className="img-cover"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-                  <p className="text-gray-600 mb-4">{product.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-primary font-bold">{product.price}</span>
-                    <button className="btn btn-primary">
-                      Đặt hàng
-                    </button>
+            {loadingPopular ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="card animate-pulse bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-6">
+                    <div className="h-6 bg-gray-200 rounded w-2/3 mb-2" />
+                    <div className="h-4 bg-gray-100 rounded w-1/2 mb-4" />
+                    <div className="h-8 bg-gray-200 rounded w-1/3" />
                   </div>
                 </div>
-              </motion.div>
-            ))}
+              ))
+            ) : errorPopular ? (
+              <div className="col-span-3 text-center text-red-500">{errorPopular}</div>
+            ) : popularDishes.length === 0 ? (
+              <div className="col-span-3 text-center text-gray-500">Chưa có dữ liệu món ăn bán chạy.</div>
+            ) : (
+              popularDishes.map((dish, idx) => {
+                // Map popularDish về MenuItemCard props
+                const menuItem = {
+                  _id: dish.id || dish._id || `popular-${idx}`,
+                  name: dish.name,
+                  image: dish.image || '/meals/meal1.jpg',
+                  price: dish.price || dish.revenue || 0,
+                  description: dish.description || '',
+                  ingredients: dish.ingredients || [],
+                  category: dish.category || 'Bán chạy',
+                  nutritionInfo: dish.nutritionInfo || {},
+                  isAvailable: dish.isAvailable !== undefined ? dish.isAvailable : true,
+                  preparationTime: dish.preparationTime || 0,
+                  isBestSeller: true,
+                  isPopular: true,
+                  isVegetarian: dish.isVegetarian !== undefined ? dish.isVegetarian : true,
+                  spicyLevel: dish.spicyLevel || 0,
+                };
+                return (
+                  <MenuItemCard key={menuItem._id} item={menuItem} />
+                );
+              })
+            )}
           </div>
         </div>
       </section>

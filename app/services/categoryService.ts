@@ -11,7 +11,7 @@ export interface Category {
   displayOrder?: number;
 }
 
-const API_URL = 'http://localhost:5000/category'
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000') + '/category';
 
 // Helper function to get auth token
 const getAuthHeader = () => {
