@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { categoryService, Category } from '../services/categoryService';
+import Image from 'next/image';
 
 interface MenuResponse {
   data: MenuItem[] | { data?: MenuItem[], items?: MenuItem[] };
@@ -283,40 +284,74 @@ export default function MenuPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-green-400 to-green-500 text-white py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">Our Menu</h1>
-          <p className="text-lg md:text-xl text-center max-w-2xl mx-auto text-white/90">
-            Discover our delicious selection of vegetarian dishes, crafted with care and quality ingredients
-          </p>
+      {/* Banner Section */}
+      <section className="relative h-[320px] md:h-[420px] flex items-center justify-center overflow-hidden mb-8">
+        <Image
+          src="/banner-menu.jpg"
+          alt="Menu Banner"
+          fill
+          className="object-cover brightness-75"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-green-900/60 to-green-500/30" />
+        <div className="relative z-10 flex flex-col items-center justify-center text-white text-center px-4">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg"
+          >
+            Khám phá Thực Đơn Chayfood
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="text-lg md:text-2xl mb-6 max-w-2xl drop-shadow"
+          >
+            Đa dạng món ăn thuần chay, dinh dưỡng, tươi ngon mỗi ngày. Đặt món dễ dàng, giao tận nơi!
+          </motion.p>
+          <motion.a
+            href="#menu-section"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="btn btn-primary px-8 py-3 rounded-full text-lg font-semibold shadow-lg hover:scale-105 transition-transform"
+          >
+            Khám phá thực đơn
+          </motion.a>
         </div>
-          </div>
+      </section>
 
       {/* Search and Filter Section */}
-      <div className="sticky top-16 z-10 bg-white/80 backdrop-blur-sm shadow-sm py-4 border-b">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="sticky top-16 z-10 bg-white/80 backdrop-blur-sm shadow-md py-4 border-b mb-4"
+      >
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-500 h-5 w-5" />
               <Input
                 type="text"
-                placeholder="Search dishes..."
+                placeholder="Tìm món ăn..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full border-green-100 focus-visible:ring-green-400"
+                className="pl-10 w-full border-green-100 focus-visible:ring-green-400 rounded-full shadow-sm"
               />
               {loading && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-green-500" />
-          </div>
+                </div>
               )}
-          </div>
+            </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 border-green-400 text-green-500 hover:bg-green-50">
+                <Button variant="outline" className="flex items-center gap-2 border-green-400 text-green-500 hover:bg-green-50 rounded-full shadow-sm">
                   <Filter className="h-5 w-5" />
-                  Filters
+                  Bộ lọc
                 </Button>
               </SheetTrigger>
               <SheetContent className="border-l-green-400 bg-white/95 backdrop-blur-sm">
@@ -535,35 +570,32 @@ export default function MenuPage() {
               </SheetContent>
             </Sheet>
           </div>
-
           {/* Category filter */}
           <div className="flex flex-wrap justify-center gap-3 mt-4">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setCategory(null)}
-              className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 ${
+              className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 shadow-sm border ${
                 category === null
                   ? 'bg-green-500 text-white shadow-md'
-                  : 'bg-white text-green-600 hover:bg-green-50 border border-green-100'
+                  : 'bg-white text-green-600 hover:bg-green-50 border-green-100'
               }`}
             >
-              All Menu
+              Tất cả món
             </motion.button>
             {categories.map((cat) => {
-              // Get a string ID from the category
               const catId = String(cat._id || cat.id || '');
-              
               return (
                 <motion.button
                   key={catId}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setCategory(catId)}
-                  className={`px-6 py-2.5 rounded-full font-medium capitalize transition-all duration-200 ${
+                  className={`px-6 py-2.5 rounded-full font-medium capitalize transition-all duration-200 shadow-sm border ${
                     category === catId
                       ? 'bg-green-500 text-white shadow-md'
-                      : 'bg-white text-green-600 hover:bg-green-50 border border-green-100'
+                      : 'bg-white text-green-600 hover:bg-green-50 border-green-100'
                   }`}
                 >
                   {cat.name}
@@ -572,21 +604,27 @@ export default function MenuPage() {
             })}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Menu Items Section */}
-      <div className="container mx-auto px-4 py-8">
+      <div id="menu-section" className="container mx-auto px-4 py-8">
         {error ? (
           <div className="flex h-[50vh] items-center justify-center">
             <p className="text-lg text-red-500">Error loading menu items</p>
           </div>
+        ) : loading ? (
+          <motion.div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-[400px] w-full bg-gray-100 rounded-lg animate-pulse shadow-sm" />
+            ))}
+          </motion.div>
         ) : menuItems.length === 0 ? (
           <div className="flex h-[50vh] items-center justify-center">
-            <p className="text-lg text-green-500">No menu items found</p>
+            <p className="text-lg text-green-500">Không tìm thấy món nào</p>
           </div>
         ) : (
           <>
-            <p className="text-green-500 mb-6">{menuItems.length} items found</p>
+            <p className="text-green-500 mb-6 font-medium">{menuItems.length} món ăn phù hợp</p>
             <motion.div
               variants={container}
               initial="hidden"

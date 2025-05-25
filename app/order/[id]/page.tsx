@@ -360,11 +360,11 @@ export default function OrderDetailsPage() {
                         <h4 className="font-medium">
                           {item.menuItemDetails?.name || 'Unknown Item'}
                         </h4>
-                        <p className="text-gray-700 font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-gray-700 font-medium">{(item.price * item.quantity).toLocaleString()} VNĐ</p>
                       </div>
                       <div className="flex justify-between mt-1">
                         <p className="text-sm text-gray-500">
-                          Quantity: {item.quantity} × ${item.price.toFixed(2)}
+                          Quantity: {item.quantity} × {item.price.toLocaleString()} VNĐ
                         </p>
                       </div>
                       
@@ -381,15 +381,15 @@ export default function OrderDetailsPage() {
               <div className="border-t mt-6 pt-4">
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">${order.totalAmount.toFixed(2)}</span>
+                  <span className="font-medium">{order.totalAmount.toLocaleString()} VNĐ</span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">$0.00</span>
+                  <span className="font-medium">0 VNĐ</span>
                 </div>
                 <div className="flex justify-between py-2 border-t border-dashed">
                   <span className="text-gray-800 font-semibold">Total</span>
-                  <span className="font-semibold text-green-600">${order.totalAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-green-600">{order.totalAmount.toLocaleString()} VNĐ</span>
                 </div>
               </div>
             </div>
