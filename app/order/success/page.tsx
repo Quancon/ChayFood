@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, ArrowRight, Home, ShoppingBag } from 'lucide-react';
@@ -10,7 +10,15 @@ import { orderService, Order } from '../../services/orderService';
 import { useCart } from '../../hooks/useCart';
 import CartToast from '../../components/cart-toast';
 
-export default function OrderSuccessPage() {
+export default function OrderSuccessPageWrapper() {
+  return (
+    <Suspense>
+      <OrderSuccessPage />
+    </Suspense>
+  );
+}
+
+function OrderSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId');
