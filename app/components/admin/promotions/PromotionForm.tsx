@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { promotionService } from '@/lib/services';
 import { Promotion } from '@/lib/services/types';
-import Link from 'next/link';
 
 interface PromotionFormProps {
   initialData?: Partial<Promotion>;
@@ -68,9 +67,13 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
       
       router.push('/admin/promotions');
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error submitting promotion:', err);
-      setError(err.message || 'Failed to save promotion. Please try again.');
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to save promotion. Please try again.');
+      } else {
+        setError('Failed to save promotion. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }

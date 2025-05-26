@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useApi } from '../../hooks/useApi';
 import { promotionService } from '../../lib/services';
 import { Promotion } from '../../lib/services/types';
@@ -22,7 +22,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "../../components/ui/dialog";
 import { Badge } from '../../components/ui/badge';
 import {
@@ -45,7 +44,7 @@ export default function PromotionsAdmin() {
 
   // Convert UI filter values to API parameters
   const getFilterParams = () => {
-    const params: Record<string, any> = {
+    const params: Record<string, unknown> = {
       page,
       limit,
     };
@@ -332,7 +331,7 @@ export default function PromotionsAdmin() {
           <DialogHeader>
             <DialogTitle>Delete Promotion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete the promotion "{selectedPromotion?.name}"? This action cannot be undone.
+              Are you sure you want to delete the promotion &quot;{selectedPromotion?.name}&quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end space-x-3 pt-4">

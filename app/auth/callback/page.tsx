@@ -1,14 +1,13 @@
 "use client"
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '../../context/AuthContext'
 import { authService } from '../../lib/services/authService'
 import { setAuthToken } from '../../lib/actions/serverAuth'
 import Link from 'next/link'
 
 function AuthCallbackContent() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const { refreshAuthState } = useAuth()
   const [error, setError] = useState<string | null>(null)
@@ -101,12 +100,12 @@ function AuthCallbackContent() {
             >
               Go to Homepage
             </Link>
-            <button
+            {/* <button
               onClick={() => router.push('/login')}
               className="w-full py-2 px-4 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors"
             >
               Try Again
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

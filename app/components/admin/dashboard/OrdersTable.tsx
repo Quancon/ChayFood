@@ -43,11 +43,15 @@ export default function OrdersTable() {
         const apiData = response.data.data || response.data;
         console.log('API response:', apiData);
         
-        setOrders(apiData);
+        setOrders(apiData as Order[]);
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching recent orders:', err);
-        setError(err.message || 'Failed to load recent orders');
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to load recent orders');
+        } else {
+          setError('Failed to load recent orders');
+        }
         setLoading(false);
         setOrders([]);
       }

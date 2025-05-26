@@ -12,7 +12,9 @@ import {
   ShoppingBagIcon,
   BanknotesIcon,
   TagIcon,
+  ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
+import { useAuth } from '../../context/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: HomeIcon },
@@ -28,9 +30,15 @@ const navigation = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    window.location.href = '/'; // Redirect to homepage after logout
+  };
 
   return (
-    <div className={`bg-[#1F2937] text-white transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`bg-[#1F2937] text-white transition-all duration-300 flex flex-col h-screen ${collapsed ? 'w-16' : 'w-64'}`}>
       <div className="p-4 flex justify-between items-center">
         {!collapsed && <div className="text-xl font-bold">ChayFood Admin</div>}
         <button
@@ -40,7 +48,7 @@ export default function AdminSidebar() {
           {collapsed ? '→' : '←'}
         </button>
       </div>
-      <nav className="mt-5 px-2">
+      <nav className="mt-5 px-2 flex-grow">
         {navigation.map((item) => {
           const isActive = pathname === item.href;
           
@@ -65,6 +73,20 @@ export default function AdminSidebar() {
           );
         })}
       </nav>
+      
+      {/* Logout button */}
+      <div className="px-2 pb-4 mt-auto">
+        <button
+          onClick={handleLogout}
+          className="w-full text-gray-300 hover:bg-gray-700 hover:text-white group flex items-center px-2 py-2 text-sm font-medium rounded-md"
+        >
+          <ArrowRightOnRectangleIcon
+            className={`text-gray-400 group-hover:text-white mr-3 flex-shrink-0 h-6 w-6 ${collapsed ? 'mx-auto' : ''}`}
+            aria-hidden="true"
+          />
+          {!collapsed && <span>Đăng xuất</span>}
+        </button>
+      </div>
     </div>
   );
 } 

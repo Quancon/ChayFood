@@ -29,7 +29,7 @@ export default function MetricCard({
       <div className="flex justify-between">
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-semibold mt-1">{value}</p>
+          <p className={`text-2xl font-semibold mt-1 ${textColor}`}>{value}</p>
         </div>
         <div className={`p-2 rounded-full ${iconColor} bg-white bg-opacity-40`}>
           {icon}

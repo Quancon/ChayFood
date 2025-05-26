@@ -51,25 +51,28 @@ export const orderService = {
         }
         
         return response.data;
-      } catch (cancelError: any) {
-        console.error(`Error from cancel endpoint for order ${id}:`, cancelError.response?.data || cancelError.message);
+      } catch (cancelError: unknown) {
+        const error = cancelError as { response?: { data?: unknown; status?: number }; message?: string };
+        console.error(`Error from cancel endpoint for order ${id}:`, error.response?.data || error.message);
         
-        if (cancelError.response?.status === 400) {
+        if (error.response?.status === 400) {
           console.log(`Attempting to cancel order ${id} through admin status update endpoint`);
           try {
             const updateResponse = await api.patch(`/order/${id}/status`, { status: 'cancelled' });
             console.log(`Successfully cancelled order ${id} through admin endpoint:`, updateResponse.data);
             return updateResponse.data;
-          } catch (updateError: any) {
-            console.error(`Admin status update fallback also failed for order ${id}:`, updateError.response?.data || updateError.message);
-            throw updateError;
+          } catch (updateError: unknown) {
+            const error = updateError as { response?: { data?: unknown; status?: number }; message?: string };
+            console.error(`Admin status update fallback also failed for order ${id}:`, error.response?.data || error.message);
+            throw error;
           }
         }
         
-        throw cancelError;
+        throw error;
       }
-    } catch (error) {
-      console.error(`All attempts to cancel order ${id} failed:`, error);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: unknown; status?: number }; message?: string };
+      console.error(`All attempts to cancel order ${id} failed:`, err);
       return {
         status: 'success',
         message: 'Order cancelled (simulated)',
@@ -92,14 +95,20 @@ export const orderService = {
       
       console.log('Order received response:', response.data);
       return response.data;
-    } catch (error: any) {
-      console.error('Error marking order as received:', error);
-      console.error('Error response:', error.response?.data);
-      console.error('Error status:', error.response?.status);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: unknown; status?: number }; message?: string };
+      console.error('Error marking order as received:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
       
-      if (error.response?.data) {
-        console.error('Backend error message:', error.response.data.message);
-        console.error('Backend error details:', error.response.data.error);
+      if (err.response?.data) {
+        const data = err.response.data as { message?: string; error?: string };
+        if (data.message) {
+          console.error('Backend error message:', data.message);
+        }
+        if (data.error) {
+          console.error('Backend error details:', data.error);
+        }
       }
       
       if (process.env.NODE_ENV === 'development') {
@@ -111,7 +120,7 @@ export const orderService = {
         };
       }
       
-      throw error;
+      throw err;
     }
   }
 }; 

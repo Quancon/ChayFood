@@ -8,7 +8,6 @@ import { authService } from '../../lib/services'
 
 interface SignUpFormProps {
   onSuccess: () => void
-  onSignInClick: () => void
 }
 
 type FormData = {
@@ -19,7 +18,7 @@ type FormData = {
   agreeToTerms: boolean
 }
 
-export default function SignUpForm({ onSuccess, onSignInClick }: SignUpFormProps) {
+export default function SignUpForm({ onSuccess }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const { 

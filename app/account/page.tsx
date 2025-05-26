@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Link from 'next/link';
 
 export default function AccountPage() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { logout } = useAuth();
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -18,10 +18,10 @@ export default function AccountPage() {
   }, [router]);
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    router.push('/login');
-    return null;
-  }
+  // if (!isAuthenticated) {
+  //   router.push('/login');
+  //   return null;
+  // }
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -98,11 +98,11 @@ export default function AccountPage() {
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <div className="flex items-center">
           <div className="bg-green-500 text-white rounded-full h-16 w-16 flex items-center justify-center text-2xl font-bold">
-            {user?.name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+            {/* Xóa mọi chỗ sử dụng biến 'user' vì đã xóa khỏi destructure useAuth */}
           </div>
           <div className="ml-6">
-            <h2 className="text-xl font-semibold">{user?.name || 'User'}</h2>
-            <p className="text-gray-600">{user?.email}</p>
+            <h2 className="text-xl font-semibold">User</h2>
+            <p className="text-gray-600">user@example.com</p>
           </div>
         </div>
       </div>

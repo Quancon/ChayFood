@@ -22,7 +22,7 @@ export const menuService = {
       // Clean up undefined values but keep empty strings and zeros
       const cleanParams = Object.fromEntries(
         Object.entries(paramsWithDefaults)
-          .filter(([_, value]) => value !== undefined)
+          .filter(([value]) => value !== undefined)
           .map(([key, value]) => {
             // Convert spicyLevel to number if it exists
             if (key === 'spicyLevel' && value !== undefined) {
@@ -83,7 +83,7 @@ export const menuService = {
         params: params,
         cleanParams: Object.fromEntries(
           Object.entries(params || {})
-            .filter(([_, value]) => value !== undefined)
+            .filter(([ value]) => value !== undefined)
         )
       });
       return { data: [], status: 500 };
@@ -114,7 +114,7 @@ export const menuService = {
       // Clean up undefined values but keep empty strings and zeros
       const cleanParams = Object.fromEntries(
         Object.entries(paramsWithDefaults)
-          .filter(([_, value]) => value !== undefined)
+          .filter(([value]) => value !== undefined)
           .map(([key, value]) => {
             // Convert spicyLevel to number if it exists
             if (key === 'spicyLevel' && value !== undefined) {
@@ -192,7 +192,7 @@ export const menuService = {
         params: params,
         cleanParams: Object.fromEntries(
           Object.entries(params)
-            .filter(([_, value]) => value !== undefined)
+            .filter(([ value]) => value !== undefined)
         )
       });
       return { data: [], status: 500 };

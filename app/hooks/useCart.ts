@@ -55,7 +55,7 @@ export function useCart(): UseCartReturn {
     if (isAuthenticated) {
       cartContext.refresh();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, cartContext]);
 
   // Check if an item is in the cart
   const isItemInCart = (itemId: string): boolean => {
@@ -116,14 +116,24 @@ export function useCart(): UseCartReturn {
   // Clear messages after 3 seconds
   useEffect(() => {
     if (message || error) {
+      // Chỉ set timeout nếu message/error vừa được set (không phải do clear)
+      if (messageTimeout) {
+        clearTimeout(messageTimeout);
+      }
       const timeout = setTimeout(() => {
-        if (message) setMessage(null);
-        if (error) setError(null);
+        setMessage(null);
+        setError(null);
+        setMessageTimeout(null);
       }, 3000);
-      
       setMessageTimeout(timeout);
       return () => clearTimeout(timeout);
     }
+    // Nếu message và error đều null, clear timeout nếu còn
+    if (messageTimeout) {
+      clearTimeout(messageTimeout);
+      setMessageTimeout(null);
+    }
+    // eslint-disable-next-line
   }, [message, error]);
 
   // Increase quantity of an item by 1
@@ -169,27 +179,6 @@ export function useCart(): UseCartReturn {
       }
     } else {
       console.error(`Could not find cart item with ID: ${itemId}`);
-    }
-  };
-
-  // Remove item
-  const removeItem = (itemId: string) => {
-    // First check if this is a cart item ID
-    const isCartItemId = cartContext.items?.some(item => item._id === itemId);
-    
-    // If it's a cart item ID, use it directly
-    if (isCartItemId) {
-      cartContext.removeItem(itemId);
-      console.log(`Removing cart item with ID: ${itemId}`);
-    } else {
-      // Otherwise, find the cart item that contains this menu item ID
-      const cartItem = cartContext.items?.find(item => item.menuItem._id === itemId);
-      if (cartItem && cartItem._id) {
-        cartContext.removeItem(cartItem._id);
-        console.log(`Removing cart item with ID: ${cartItem._id} (found by menuItem ID: ${itemId})`);
-      } else {
-        console.error(`Could not find cart item containing menuItem with ID: ${itemId}`);
-      }
     }
   };
 

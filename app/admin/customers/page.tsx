@@ -35,7 +35,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     fetchCustomers(currentPage, searchTerm)
-  }, [currentPage])
+  }, [currentPage, searchTerm])
 
   const handleSearch = () => {
     setCurrentPage(1)

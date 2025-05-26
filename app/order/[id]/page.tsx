@@ -7,7 +7,6 @@ import { orderService } from '../../lib/services';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { CheckCircleIcon, XCircleIcon, TruckIcon, ClockIcon } from '@heroicons/react/24/outline';
-import { toast } from 'react-hot-toast';
 
 // Type for Order Details
 interface OrderDetails {
@@ -129,7 +128,6 @@ export default function OrderDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
-  const [cancelSuccess, setCancelSuccess] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelFeedback, setCancelFeedback] = useState("");
   const [receivedLoading, setReceivedLoading] = useState(false);
@@ -272,7 +270,7 @@ export default function OrderDetailsPage() {
       <div className="container mx-auto px-4 py-16 mt-16">
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-6 py-4 rounded-lg shadow-sm">
           <h2 className="text-lg font-medium mb-2">Order not found</h2>
-          <p>We couldn't find the order you're looking for.</p>
+          <p>We could not find the order you are looking for.</p>
           <button
             onClick={() => router.push('/account/orders')}
             className="mt-4 bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors"
@@ -316,20 +314,6 @@ export default function OrderDetailsPage() {
       </div>
       
       {/* Success message for cancellation */}
-      {cancelSuccess && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-green-50 border border-green-200 text-green-700 px-6 py-4 rounded-lg shadow-sm mb-6"
-        >
-          <div className="flex items-center">
-            <CheckCircleIcon className="h-5 w-5 mr-2" />
-            <p className="font-medium">Your order has been successfully cancelled.</p>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Success message for received */}
       {receivedSuccess && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
@@ -376,11 +360,11 @@ export default function OrderDetailsPage() {
                         <h4 className="font-medium">
                           {item.menuItemDetails?.name || 'Unknown Item'}
                         </h4>
-                        <p className="text-gray-700 font-medium">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-gray-700 font-medium">{(item.price * item.quantity).toLocaleString()} VNĐ</p>
                       </div>
                       <div className="flex justify-between mt-1">
                         <p className="text-sm text-gray-500">
-                          Quantity: {item.quantity} × ${item.price.toFixed(2)}
+                          Quantity: {item.quantity} × {item.price.toLocaleString()} VNĐ
                         </p>
                       </div>
                       
@@ -397,15 +381,15 @@ export default function OrderDetailsPage() {
               <div className="border-t mt-6 pt-4">
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">${order.totalAmount.toFixed(2)}</span>
+                  <span className="font-medium">{order.totalAmount.toLocaleString()} VNĐ</span>
                 </div>
                 <div className="flex justify-between py-2">
                   <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">$0.00</span>
+                  <span className="font-medium">0 VNĐ</span>
                 </div>
                 <div className="flex justify-between py-2 border-t border-dashed">
                   <span className="text-gray-800 font-semibold">Total</span>
-                  <span className="font-semibold text-green-600">${order.totalAmount.toFixed(2)}</span>
+                  <span className="font-semibold text-green-600">{order.totalAmount.toLocaleString()} VNĐ</span>
                 </div>
               </div>
             </div>
@@ -507,7 +491,7 @@ export default function OrderDetailsPage() {
             
             <div className="mb-4">
               <label htmlFor="cancelFeedback" className="block text-sm font-medium text-gray-700 mb-2">
-                Please tell us why you're cancelling (optional):
+                Please tell us why you&#39;re cancelling (optional):
               </label>
               <textarea
                 id="cancelFeedback"

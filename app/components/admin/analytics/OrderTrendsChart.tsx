@@ -50,7 +50,7 @@ export default function OrderTrendsChart() {
         
         {/* Chart area */}
         <div className="flex-1 flex">
-          {orderTrends.map((day, index) => (
+          {orderTrends.map((day) => (
             <div key={day.date} className="flex-1 flex flex-col">
               <div className="flex-1 flex items-end relative">
                 {/* Revenue line point */}

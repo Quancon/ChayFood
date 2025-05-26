@@ -11,6 +11,15 @@ const api = axios.create({
 // Add token to requests if available
 api.interceptors.request.use(
   (config) => {
+    // Log rõ ràng khi gọi login
+    if (config.url?.includes('/auth/login')) {
+      console.log('DEBUG LOGIN REQUEST:', {
+        fullUrl: config.baseURL + config.url,
+        method: config.method,
+        data: config.data,
+        headers: config.headers,
+      });
+    }
     // Get token from localStorage in client-side context
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('authToken');

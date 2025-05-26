@@ -240,7 +240,7 @@ export default function OrdersPage() {
                         </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 font-medium">${order.totalAmount.toFixed(2)}</td>
+                    <td className="px-6 py-4 font-medium">{order.totalAmount.toLocaleString()} VNĐ</td>
                     <td className="px-6 py-4">
                       <StatusBadge status={order.status} />
                     </td>

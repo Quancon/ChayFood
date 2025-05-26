@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import Image from 'next/image'
 import { categoryService, Category } from '../../services/categoryService'
 import { menuService } from '@/lib/services'
 import { MenuItem } from '@/lib/services/types'
@@ -49,7 +50,7 @@ export default function MenuPage() {
     try {
       const data = await categoryService.getAll()
       setCategories(data)
-    } catch (error) {
+    } catch {
       toast.error('Không thể tải danh mục')
     }
   }
@@ -58,7 +59,7 @@ export default function MenuPage() {
     try {
       const response = await menuService.getAll()
       setMenuItems(response.data)
-    } catch (error) {
+    } catch {
       toast.error('Không thể tải menu')
     }
   }
@@ -70,7 +71,7 @@ export default function MenuPage() {
       await menuService.delete(id)
       toast.success('Xóa món thành công')
       fetchMenuItems()
-    } catch (error) {
+    } catch {
       toast.error('Lỗi xóa món')
     }
   }
@@ -80,7 +81,7 @@ export default function MenuPage() {
       await menuService.updateAvailability(id, !currentStatus)
       toast.success('Cập nhật trạng thái thành công')
       fetchMenuItems()
-    } catch (error) {
+    } catch {
       toast.error('Lỗi cập nhật trạng thái')
     }
   }
@@ -92,7 +93,7 @@ export default function MenuPage() {
       await categoryService.delete(id)
       toast.success('Xóa danh mục thành công')
       fetchCategories()
-    } catch (error) {
+    } catch {
       toast.error('Lỗi xóa danh mục')
     }
   }
@@ -114,7 +115,7 @@ export default function MenuPage() {
     setEditingMenuItem(item)
     setMenuItemFormData({
       name: item.name,
-      category: typeof item.category === 'string' ? item.category : (item.category as any)?._id || '',
+      category: typeof item.category === 'string' ? item.category : (item.category as { _id?: string })?._id || '',
       price: item.price,
       description: item.description,
       image: item.image,
@@ -152,7 +153,7 @@ export default function MenuPage() {
       }
       fetchCategories()
       resetCategoryForm()
-    } catch (error) {
+    } catch {
       toast.error(editingCategory ? 'Lỗi cập nhật danh mục' : 'Lỗi thêm danh mục')
     } finally {
       setIsLoading(false)
@@ -193,7 +194,7 @@ export default function MenuPage() {
         image: '',
         isAvailable: true
       })
-    } catch (error) {
+    } catch {
       toast.error(editingMenuItem ? 'Lỗi cập nhật món' : 'Lỗi thêm món')
     } finally {
       setIsLoading(false)
@@ -207,8 +208,8 @@ export default function MenuPage() {
         // Check if item.category is a string or an object with _id
         if (typeof item.category === 'string') {
           return item.category === selectedCategory;
-        } else if (typeof item.category === 'object' && item.category && '_id' in (item.category as any)) {
-          return (item.category as any)._id === selectedCategory;
+        } else if (typeof item.category === 'object' && item.category && '_id' in (item.category as { _id?: string })) {
+          return (item.category as { _id?: string })._id === selectedCategory;
         }
         return false;
       });
@@ -413,9 +414,11 @@ export default function MenuPage() {
         {filteredItems.map((item) => (
           <div key={item._id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="aspect-w-16 aspect-h-9 bg-gray-200">
-              <img
+              <Image
                 src={item.image}
                 alt={item.name}
+                width={640}
+                height={360}
                 className="w-full h-48 object-cover"
               />
             </div>

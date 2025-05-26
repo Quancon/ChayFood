@@ -37,13 +37,14 @@ class CustomerService implements CustomerServiceProps {
         total: response.data.data.pagination.totalCount
       };
       
-    } catch (error: any) {
-      console.error('Error fetching customers:', error);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      console.error('Error fetching customers:', err);
       return {
         success: false,
         data: [],
         total: 0,
-        message: error.response?.data?.message || 'Failed to fetch customers'
+        message: err.response?.data?.message || 'Failed to fetch customers'
       };
     }
   }
@@ -55,12 +56,13 @@ class CustomerService implements CustomerServiceProps {
         success: response.data.status === 'success',
         data: response.data.data.customer
       };
-    } catch (error: any) {
-      console.error(`Error fetching customer with ID ${id}:`, error);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      console.error(`Error fetching customer with ID ${id}:`, err);
       return {
         success: false,
         data: {} as Customer,
-        message: error.response?.data?.message || 'Failed to fetch customer details'
+        message: err.response?.data?.message || 'Failed to fetch customer details'
       };
     }
   }
@@ -72,11 +74,12 @@ class CustomerService implements CustomerServiceProps {
         success: response.data.status === 'success',
         message: response.data.message
       };
-    } catch (error: any) {
-      console.error(`Error deleting customer with ID ${id}:`, error);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      console.error(`Error deleting customer with ID ${id}:`, err);
       return {
         success: false,
-        message: error.response?.data?.message || 'Failed to delete customer'
+        message: err.response?.data?.message || 'Failed to delete customer'
       };
     }
   }

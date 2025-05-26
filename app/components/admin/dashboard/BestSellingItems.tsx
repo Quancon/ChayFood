@@ -36,16 +36,20 @@ export default function BestSellingItems() {
         console.log('API response:', apiData);
         
         // Process and enhance with image paths
-        const processedData = apiData.map((item: any) => ({
-          ...item,
-          image: `/menu/${item.name.toLowerCase().replace(/\s+/g, '-')}.jpg`
-        }));
+        const processedData = apiData.map((item: unknown) => {
+          const dish = item as MenuItem;
+          return {
+            ...dish,
+            image: `/menu/${dish.name.toLowerCase().replace(/\s+/g, '-')}.jpg`
+          };
+        });
         
         setItems(processedData);
         setLoading(false);
-      } catch (err: any) {
-        console.error('Error fetching popular dishes:', err);
-        setError(err.message || 'Failed to load popular dishes');
+      } catch (err: unknown) {
+        const error = err as { message?: string };
+        console.error('Error fetching popular dishes:', error);
+        setError(error.message || 'Failed to load popular dishes');
         setLoading(false);
         
         // Fallback to empty data instead of mock data

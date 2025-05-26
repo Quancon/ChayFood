@@ -48,8 +48,8 @@ export interface RegionalOrder {
 }
 
 // Cấu hình URL API từ biến môi trường hoặc mặc định
-const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
-const API_URL = `${BASE_API_URL}/api/analytics`;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// const API_URL =  'http://localhost:5000';
 
 // Log API URL for debugging
 console.log('DEBUG: Analytics API URL:', API_URL);
@@ -61,13 +61,13 @@ const DEBUG_MODE = true;
 const testApiConnection = async () => {
   try {
     console.log('DEBUG: Testing API connection...');
-    const response = await axios.get(`${BASE_API_URL}/`, {
+    const response = await axios.get(`${API_URL}/`, {
       timeout: 5000
     });
     console.log('DEBUG: API connection test successful:', response.status, response.statusText);
     return true;
-  } catch (error: any) {
-    console.error('DEBUG: API connection test failed:', error.message);
+  } catch (error: unknown) {
+    console.error('DEBUG: API connection test failed:', error);
     return false;
   }
 };
@@ -85,15 +85,6 @@ const getAuthHeader = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
   return {};
-};
-
-// Logging function for debugging
-const logDebug = (message: string, data?: any) => {
-  if (DEBUG_MODE) {
-    console.group(`🔍 ${message}`);
-    if (data) console.log(data);
-    console.groupEnd();
-  }
 };
 
 // Tạo instance axios với cấu hình chung
@@ -164,14 +155,22 @@ apiClient.interceptors.response.use(
 );
 
 // Prepare filter parameters for API calls
+interface FilterParams {
+  timeRange?: string;
+  region?: string;
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 const prepareParams = (
   timeRange?: string,
   region?: string,
   category?: string,
   startDate?: string | null,
   endDate?: string | null
-) => {
-  const params: any = {};
+): FilterParams => {
+  const params: FilterParams = {};
   
   if (timeRange) params.timeRange = timeRange;
   if (region && region !== 'all') params.region = region;
@@ -189,37 +188,21 @@ const prepareParams = (
   return params;
 };
 
-// Function to handle API errors with fallback data
-const handleApiError = <T>(
-  error: any, 
-  endpoint: string, 
-  fallbackData: T, 
-  params?: any
-): T => {
-  console.error(`Error fetching from ${endpoint}:`, error);
-  logDebug('Using fallback data for', { endpoint, params });
-  return fallbackData;
-};
-
 // Helper function to parse API response safely
-const parseResponse = <T>(response: any): T => {
+const parseResponse = <T>(response: unknown): T => {
   console.log('DEBUG: Parsing API response');
-  console.log('DEBUG: Response type:', typeof response.data);
-  
-  if (typeof response.data === 'object') {
-    // If response already has data in expected format, return it directly
-    if (!response.data.data) {
-      console.log('DEBUG: Response contains direct data format');
-      return response.data;
+  if (response && typeof response === 'object') {
+    // Nếu response có property data
+    if ('data' in response && response.data !== undefined) {
+      console.log('DEBUG: Response contains wrapped data format');
+      return (response as { data: T }).data;
     }
-    
-    // If response is wrapped in a data property, return data.data
-    console.log('DEBUG: Response contains wrapped data format');
-    return response.data.data;
+    // Nếu response là object đúng format
+    console.log('DEBUG: Response contains direct data format');
+    return response as T;
   }
-  
   console.log('DEBUG: Unexpected response format, returning raw data');
-  return response.data;
+  return response as T;
 };
 
 export const analyticsService = {
@@ -236,13 +219,13 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/orders/stats', {
+      const response = await apiClient.get('/analytics/orders/stats', {
         params,
         headers: getAuthHeader()
       });
       
       return parseResponse<OrderStats>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching order statistics:', error);
       throw error;
     }
@@ -260,13 +243,13 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, undefined, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/customers/stats', {
+      const response = await apiClient.get('/analytics/customers/stats', {
         params,
         headers: getAuthHeader()
       });
       
       return parseResponse<CustomerStats>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching customer statistics:', error);
       throw error;
     }
@@ -285,13 +268,13 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/dishes/popular', {
+      const response = await apiClient.get('/analytics/dishes/popular', {
         params,
         headers: getAuthHeader()
       });
       
       return parseResponse<PopularDish[]>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching popular dishes:', error);
       throw error;
     }
@@ -310,13 +293,13 @@ export const analyticsService = {
     const params = prepareParams(timeRange, region, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/orders/trends', {
+      const response = await apiClient.get('/analytics/orders/trends', {
         params,
         headers: getAuthHeader()
       });
       
       return parseResponse<OrderTrend[]>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching order trends:', error);
       throw error;
     }
@@ -334,13 +317,13 @@ export const analyticsService = {
     const params = prepareParams(timeRange, undefined, category, startDate, endDate);
     
     try {
-      const response = await apiClient.get('/orders/regional', {
+      const response = await apiClient.get('/analytics/orders/regional', {
         params,
         headers: getAuthHeader()
       });
       
       return parseResponse<RegionalOrder[]>(response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching regional orders:', error);
       throw error;
     }
@@ -357,5 +340,5 @@ export const analyticsService = {
   // Check if debug mode is enabled
   isDebugMode: () => {
     return DEBUG_MODE || (typeof window !== 'undefined' && window.localStorage.getItem('analyticsDebugMode') === 'true');
-  }
+  },
 }; 

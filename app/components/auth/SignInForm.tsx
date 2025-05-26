@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -10,13 +10,16 @@ type FormValues = {
   password: string;
 }
 
-export default function SignInForm() {
+interface SignInFormProps {
+  onSuccess?: () => void;
+}
+
+export default function SignInForm({ onSuccess }: SignInFormProps) {
   const router = useRouter()
   const { login, isAuthenticated } = useAuth()
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
-  const [redirectPath, setRedirectPath] = useState<string | null>(null)
   
   const form = useForm<FormValues>({
     defaultValues: {
@@ -42,7 +45,7 @@ export default function SignInForm() {
       const user = await login(values.email, values.password)
       
       if (user) {
-        console.log('Login successful, redirecting...')
+        if (onSuccess) onSuccess();
         const redirectPath = localStorage.getItem('redirectAfterAuth') || '/'
         localStorage.removeItem('redirectAfterAuth')
         router.push(redirectPath)
@@ -76,6 +79,12 @@ export default function SignInForm() {
     }
   }
 
+  // Chuyển sang form quên mật khẩu
+  const switchToForgotPassword = () => {
+    const event = new CustomEvent('switchAuthView', { detail: 'forgotPassword' });
+    window.dispatchEvent(event);
+  };
+
   return (
     <div className="space-y-6 w-full">
       {error && (
@@ -99,9 +108,18 @@ export default function SignInForm() {
         </div>
           
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
+          <div className="flex justify-between items-center mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <button
+              type="button"
+              onClick={switchToForgotPassword}
+              className="text-sm text-green-600 hover:text-green-700"
+            >
+              Quên mật khẩu?
+            </button>
+          </div>
           <input
             id="password"
             type="password"
@@ -196,7 +214,7 @@ export default function SignInForm() {
       
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <button
             onClick={() => {
               const event = new CustomEvent('switchAuthView', { detail: 'signup' });

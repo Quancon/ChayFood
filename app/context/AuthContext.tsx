@@ -19,6 +19,8 @@ interface AuthContextType {
   login: (emailOrToken: string, password?: string) => Promise<User | null>;
   logout: () => Promise<void>;
   refreshAuthState: () => Promise<User | null>;
+  forgotPassword: (email: string) => Promise<{success: boolean; message: string}>;
+  resetPassword: (token: string, newPassword: string) => Promise<{success: boolean; message: string}>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [lastRefresh, setLastRefresh] = useState<number>(0);
+  const [lastRefresh, setLastRefresh] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Helper function to update cookies with user data
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               // Store this user in localStorage for future use
               localStorage.setItem('currentUser', JSON.stringify(tokenUser));
             }
-          } catch (decodeError) {
+          } catch {
             setUser(null);
             updateCookies(null, null);
             localStorage.removeItem('authToken');
@@ -100,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           updateCookies(null, null);
           localStorage.removeItem('authToken');
         }
-      } catch (error) {
+      } catch {
         setUser(null);
         updateCookies(null, null);
         localStorage.removeItem('authToken');
@@ -110,6 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
+  }, []);
+
+  useEffect(() => {
+    setLastRefresh(Date.now());
   }, []);
 
   // Login function - now handles both token login (OAuth) and email/password login
@@ -169,7 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAuthState = async (): Promise<User | null> => {
     // Chống vòng lặp và refresh quá nhanh
     const now = Date.now();
-    if (isRefreshing || now - lastRefresh < 5000) {
+    if (isRefreshing || now - (lastRefresh || 0) < 5000) {
       return user;
     }
     
@@ -241,6 +247,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Forgot password function
+  const forgotPassword = async (email: string) => {
+    return await authService.forgotPassword(email);
+  };
+
+  // Reset password function
+  const resetPassword = async (token: string, newPassword: string) => {
+    return await authService.resetPassword(token, newPassword);
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -249,6 +265,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     login,
     logout,
     refreshAuthState,
+    forgotPassword,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
