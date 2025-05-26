@@ -10,11 +10,30 @@ import Link from 'next/link'
 import { analyticsService } from './services/analyticsService'
 import { MenuItemCard } from './components/ui/menu-item-card';
 
+interface PopularDish {
+  id?: string;
+  _id?: string;
+  name: string;
+  image?: string;
+  price?: number;
+  revenue?: number;
+  description?: string;
+  ingredients?: string[];
+  category?: string;
+  nutritionInfo?: Record<string, number>;
+  isAvailable?: boolean;
+  preparationTime?: number;
+  isVegetarian?: boolean;
+  spicyLevel?: number;
+  isBestSeller?: boolean;
+  isPopular?: boolean;
+}
+
 export default function Home() {
   // This hook will automatically redirect admin users to the admin dashboard
   useRedirectByRole({ adminRedirect: '/admin' });
   
-  const [popularDishes, setPopularDishes] = useState<any[]>([]);
+  const [popularDishes, setPopularDishes] = useState<PopularDish[]>([]);
   const [loadingPopular, setLoadingPopular] = useState(true);
   const [errorPopular, setErrorPopular] = useState<string | null>(null);
 
@@ -25,7 +44,7 @@ export default function Home() {
       try {
         const data = await analyticsService.getPopularDishes();
         setPopularDishes(Array.isArray(data) ? data.slice(0, 3) : []);
-      } catch (err: any) {
+      } catch {
         setErrorPopular('Không thể tải món ăn bán chạy.');
       } finally {
         setLoadingPopular(false);
@@ -104,8 +123,15 @@ export default function Home() {
                   price: dish.price || dish.revenue || 0,
                   description: dish.description || '',
                   ingredients: dish.ingredients || [],
-                  category: dish.category || 'Bán chạy',
-                  nutritionInfo: dish.nutritionInfo || {},
+                  category: (['main', 'side', 'dessert', 'beverage'].includes(String(dish.category))
+                    ? dish.category
+                    : 'main') as 'main' | 'side' | 'dessert' | 'beverage',
+                  nutritionInfo: {
+                    calories: dish.nutritionInfo?.calories ?? 0,
+                    protein: dish.nutritionInfo?.protein ?? 0,
+                    carbs: dish.nutritionInfo?.carbs ?? 0,
+                    fat: dish.nutritionInfo?.fat ?? 0,
+                  },
                   isAvailable: dish.isAvailable !== undefined ? dish.isAvailable : true,
                   preparationTime: dish.preparationTime || 0,
                   isBestSeller: true,

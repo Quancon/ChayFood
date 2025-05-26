@@ -35,6 +35,39 @@ export interface Order {
   updatedAt: string;
 }
 
+// Định nghĩa interface cho dữ liệu đơn hàng được gửi lên
+export interface OrderCreateData {
+  user?: string;
+  items: Array<{
+    menuItem: string;
+    quantity: number;
+    price?: number;
+    specialInstructions?: string;
+  }>;
+  totalAmount: number;
+  deliveryAddress: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    additionalInfo?: string;
+  };
+  paymentMethod: 'cod' | 'card' | 'banking' | 'stripe';
+  specialInstructions?: string;
+}
+
+// Định nghĩa interface cho lỗi API
+export interface ApiError {
+  status?: string;
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+      status?: string;
+    };
+  };
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 // Helper function to get auth token
@@ -132,7 +165,7 @@ export const orderService = {
   },
 
   // Tạo đơn hàng mới
-  create: async (orderData: any) => {
+  create: async (orderData: OrderCreateData) => {
     try {
       const response = await axios.post(
         `${API_URL}/order`,
@@ -140,11 +173,12 @@ export const orderService = {
         { headers: { ...getAuthHeader(), 'Content-Type': 'application/json' } }
       );
       return response.data;
-    } catch (error: any) {
-      if (error.response && error.response.data) {
-        return error.response.data;
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      if (apiError.response && apiError.response.data) {
+        return apiError.response.data;
       }
-      return { status: 'error', message: error.message };
+      return { status: 'error', message: apiError.message || 'An unknown error occurred' };
     }
   },
 

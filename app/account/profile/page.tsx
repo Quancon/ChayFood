@@ -3,6 +3,7 @@ import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { userService } from "../../lib/services/userService";
 import { UserIcon, MapPinIcon, GiftIcon, CreditCardIcon, PlusIcon, PencilIcon } from "@heroicons/react/24/solid";
 import { TrashIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
 
 interface UserProfile {
   name: string;
@@ -18,7 +19,7 @@ interface Address {
   city: string;
   state: string;
   postalCode: string;
-  phone?: string;
+  phone: string;
   additionalInfo?: string;
   isDefault?: boolean;
 }
@@ -86,7 +87,7 @@ function AddAddressModal({ show, onClose, onSuccess, address }: AddAddressModalP
         onSuccess("Thêm địa chỉ thành công!");
       }
       onClose();
-    } catch (err: any) {
+    } catch  {
       setError("Lưu địa chỉ thất bại");
     } finally {
       setLoading(false);
@@ -218,7 +219,7 @@ export default function ProfilePage() {
       setUser(userRes.data || userRes);
       const addrRes = await userService.getAddresses();
       setAddresses(addrRes.data || addrRes);
-    } catch (err: any) {
+    } catch  {
       setError("Không thể tải thông tin người dùng hoặc địa chỉ");
     } finally {
       setLoading(false);
@@ -227,16 +228,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line
   }, []);
-
-  // Khi thêm/sửa địa chỉ thành công
-  const handleAddressSuccess = () => {
-    setSuccess(editAddress ? "Cập nhật địa chỉ thành công!" : "Thêm địa chỉ thành công!");
-    setEditAddress(null);
-    setShowAddressModal(false);
-    fetchData();
-  };
 
   // Handle avatar file select
   const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -259,8 +251,12 @@ export default function ProfilePage() {
       setSuccess("Cập nhật ảnh đại diện thành công!");
       setAvatarFile(null);
       fetchData();
-    } catch (err: any) {
-      setError("Cập nhật ảnh đại diện thất bại");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError("Cập nhật ảnh đại diện thất bại");
+      } else {
+        setError("Cập nhật ảnh đại diện thất bại");
+      }
     } finally {
       setAvatarLoading(false);
     }
@@ -272,9 +268,11 @@ export default function ProfilePage() {
         {/* Avatar + Info */}
         <div className="md:col-span-1 flex flex-col items-center bg-white rounded-3xl shadow-xl p-8 relative">
           <div className="relative group">
-            <img
+            <Image
               src={user?.picture || "/default-avatar.png"}
               alt="avatar"
+              width={128}
+              height={128}
               className="w-32 h-32 rounded-full border-4 border-blue-500 shadow-lg object-cover transition-transform group-hover:scale-105"
             />
             <form onSubmit={handleAvatarUpload} className="absolute bottom-0 right-0">
@@ -343,7 +341,7 @@ export default function ProfilePage() {
                               await userService.deleteAddress(addr._id);
                               setSuccess("Đã xóa địa chỉ thành công!");
                               fetchData();
-                            } catch (err) {
+                            } catch {
                               setError("Xóa địa chỉ thất bại");
                             }
                           }

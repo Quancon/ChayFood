@@ -49,6 +49,7 @@ export interface RegionalOrder {
 
 // Cấu hình URL API từ biến môi trường hoặc mặc định
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+// const API_URL =  'http://localhost:5000';
 
 // Log API URL for debugging
 console.log('DEBUG: Analytics API URL:', API_URL);

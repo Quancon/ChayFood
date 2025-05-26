@@ -8,7 +8,6 @@ import { orderService } from '../../../services/orderService';
 import { paymentService } from '../../../services/paymentService';
 import { promotionService } from '../../../lib/services/promotionService';
 import { PaymentMethodCard } from '../../../components/PaymentMethodCard';
-import { FaCcVisa, FaCcMastercard, FaCcJcb } from 'react-icons/fa';
 import Image from 'next/image';
 import { Promotion } from '../../../lib/services/types';
 
@@ -33,13 +32,27 @@ const paymentMethods = [
   }
 ];
 
+interface OrderItem {
+  menuItem: { name: string };
+  quantity: number;
+  price: number;
+}
+
+interface Order {
+  _id: string;
+  items: OrderItem[];
+  totalAmount: number;
+  paymentMethod?: string;
+  paymentStatus?: string;
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const params = useParams();
   const orderId = params.orderId as string;
   
   const [isLoading, setIsLoading] = useState(true);
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const hasRedirected = useRef(false);
@@ -49,15 +62,12 @@ export default function PaymentPage() {
   const [isApplyingPromotion, setIsApplyingPromotion] = useState(false);
   const [appliedPromotion, setAppliedPromotion] = useState<Promotion | null>(null);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
-  const [originalAmount, setOriginalAmount] = useState<number>(0);
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
-  const [isLoadingPromotions, setIsLoadingPromotions] = useState(false);
 
   // Load active promotions
   useEffect(() => {
     const fetchActivePromotions = async () => {
       try {
-        setIsLoadingPromotions(true);
         const response = await promotionService.getAll({ 
           isActive: true, 
           status: 'active'
@@ -68,8 +78,6 @@ export default function PaymentPage() {
         }
       } catch (error) {
         console.error('Error fetching promotions:', error);
-      } finally {
-        setIsLoadingPromotions(false);
       }
     };
 
@@ -86,8 +94,7 @@ export default function PaymentPage() {
 
         const data = await orderService.getById(orderId);
         if (data) {
-          setOrder(data);
-          setOriginalAmount(data.totalAmount);
+          setOrder(data as Order);
           setSelectedPaymentMethod(data.paymentMethod || 'banking');
           
           // Check if order is already paid
@@ -100,9 +107,9 @@ export default function PaymentPage() {
         } else {
           throw new Error('Không thể tải thông tin đơn hàng');
         }
-      } catch (error: any) {
-        setError(error.message || 'Đã xảy ra lỗi khi tải thông tin đơn hàng');
-        toast.error(error.message || 'Đã xảy ra lỗi khi tải thông tin đơn hàng');
+      } catch {
+        setError('Đã xảy ra lỗi khi tải thông tin đơn hàng');
+        toast.error('Đã xảy ra lỗi khi tải thông tin đơn hàng');
       } finally {
         setIsLoading(false);
       }
@@ -126,8 +133,8 @@ export default function PaymentPage() {
         } else {
           toast.error(res.message || 'Không thể tạo phiên thanh toán Stripe');
         }
-      } catch (error: any) {
-        toast.error(error.message || 'Đã xảy ra lỗi khi tạo phiên thanh toán');
+      } catch {
+        toast.error('Đã xảy ra lỗi khi tạo phiên thanh toán');
       } finally {
         setIsLoading(false);
       }
@@ -160,14 +167,14 @@ export default function PaymentPage() {
           } else {
             toast.error('Mã giảm giá không hợp lệ hoặc đã hết hạn');
           }
-        } catch (error) {
+        } catch {
           toast.error('Không thể xác thực mã giảm giá');
         }
       } else {
         // Found valid promotion in our active promotions
         calculateDiscount(foundPromotion);
       }
-    } catch (error) {
+    } catch {
       toast.error('Đã xảy ra lỗi khi áp dụng mã giảm giá');
     } finally {
       setIsApplyingPromotion(false);
@@ -462,7 +469,7 @@ export default function PaymentPage() {
               <h2 className="text-xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
               
               <div className="divide-y mb-4">
-                {order.items.map((item: any, index: number) => (
+                {order.items.map((item: OrderItem, index: number) => (
                   <div key={index} className="py-3 flex justify-between">
                     <div>
                       <span className="font-medium">{item.quantity}x </span>

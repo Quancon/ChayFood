@@ -96,9 +96,14 @@ const CardForm = ({ orderId, amount, onSuccess, onCancel }: StripePaymentFormPro
           toast.error('Payment confirmed, but order could not be updated.');
         }
       }
-    } catch (error: any) {
-      setErrorMessage(error.message || 'An unexpected error occurred');
-      toast.error(error.message || 'An unexpected error occurred');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message || 'An unexpected error occurred');
+        toast.error(error.message || 'An unexpected error occurred');
+      } else {
+        setErrorMessage('An unexpected error occurred');
+        toast.error('An unexpected error occurred');
+      }
     } finally {
       setIsLoading(false);
     }

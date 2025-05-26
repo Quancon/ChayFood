@@ -34,7 +34,7 @@ export function MenuItemCard({ item, className }: MenuItemCardProps) {
     try {
       await addToCartWithMessage(item, 1);
       toast.success(`Đã thêm ${item.name} vào giỏ hàng`);
-    } catch (error) {
+    } catch {
       toast.error("Không thể thêm vào giỏ hàng");
     } finally {
       setIsLoading(false);

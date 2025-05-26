@@ -45,11 +45,15 @@ export default function MenuItemsList() {
         const apiData = response.data.data || response.data;
         console.log('API response:', apiData);
         
-        setMenuItems(apiData);
+        setMenuItems(apiData as MenuItem[]);
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching menu items:', err);
-        setError(err.message || 'Failed to load menu items');
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to load menu items');
+        } else {
+          setError('Failed to load menu items');
+        }
         setLoading(false);
         setMenuItems([]);
       }

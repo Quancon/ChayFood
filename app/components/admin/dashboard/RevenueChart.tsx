@@ -27,22 +27,26 @@ export default function RevenueChart() {
         });
         
         // Process API data
-        const apiData = response.data.data || response.data;
+        const apiData = (response.data.data || response.data) as DataPoint[];
         console.log('API response:', apiData);
         
-        const processedData = apiData.map((item: any) => ({
+        const processedData = apiData.map((item: DataPoint) => ({
           date: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
           revenue: item.revenue
         }));
         
         setData(processedData);
         setLoading(false);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error fetching revenue data:', err);
-        setError(err.message || 'Failed to load revenue data');
+        if (err instanceof Error) {
+          setError(err.message || 'Failed to load revenue data');
+        } else {
+          setError('Failed to load revenue data');
+        }
         setLoading(false);
         
-        // Fallback to empty data instead of mock data
+        // Fallback to empty data 
         setData([]);
       }
     };

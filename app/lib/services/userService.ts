@@ -6,7 +6,7 @@ export const userService = {
     const res = await apiClient.get("/user/profile/full");
     return res.data;
   },
-  async updateProfile(data: any) {
+  async updateProfile(data: Record<string, unknown>) {
     const res = await apiClient.put("/user/profile", data);
     return res.data;
   },
@@ -16,11 +16,11 @@ export const userService = {
     const res = await apiClient.get("/user/addresses");
     return res.data;
   },
-  async addAddress(data: any) {
+  async addAddress(data: Record<string, unknown>) {
     const res = await apiClient.post("/user/addresses", data);
     return res.data;
   },
-  async updateAddress(addressId: string, data: any) {
+  async updateAddress(addressId: string, data: Record<string, unknown>) {
     const res = await apiClient.put(`/user/addresses/${addressId}`, data);
     return res.data;
   },

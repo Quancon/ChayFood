@@ -153,7 +153,7 @@ export default function MenuPage() {
       }
       fetchCategories()
       resetCategoryForm()
-    } catch (error) {
+    } catch {
       toast.error(editingCategory ? 'Lỗi cập nhật danh mục' : 'Lỗi thêm danh mục')
     } finally {
       setIsLoading(false)
@@ -194,7 +194,7 @@ export default function MenuPage() {
         image: '',
         isAvailable: true
       })
-    } catch (error) {
+    } catch {
       toast.error(editingMenuItem ? 'Lỗi cập nhật món' : 'Lỗi thêm món')
     } finally {
       setIsLoading(false)

@@ -1,6 +1,12 @@
 import * as React from "react";
 
-export function Alert({ children, variant = "default", className = "" }: any) {
+interface AlertProps {
+  children: React.ReactNode;
+  variant?: "default" | "destructive";
+  className?: string;
+}
+
+export function Alert({ children, variant = "default", className = "" }: AlertProps) {
   const base =
     "rounded-md border px-4 py-3 text-sm " +
     (variant === "destructive"

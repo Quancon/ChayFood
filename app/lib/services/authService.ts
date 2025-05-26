@@ -128,12 +128,9 @@ export const authService = {
         success: true, 
         message: response.data.message || 'Email đã được gửi với hướng dẫn đặt lại mật khẩu.'
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error sending password reset email:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Không thể gửi email đặt lại mật khẩu.' 
-      };
+     
     }
   },
   
@@ -147,12 +144,9 @@ export const authService = {
         success: true, 
         message: response.data.message || 'Mật khẩu đã được đặt lại thành công.' 
       };
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error resetting password:', error);
-      return { 
-        success: false, 
-        message: error.response?.data?.message || 'Không thể đặt lại mật khẩu.' 
-      };
+   
     }
   },
   

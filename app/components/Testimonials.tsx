@@ -101,7 +101,7 @@ export default function Testimonials() {
                   />
                 </div>
                 <p className="text-gray-600 text-lg mb-6 italic">
-                  "{testimonials[currentIndex].content}"
+                  &quot;{testimonials[currentIndex].content}&quot;
                 </p>
                 <h3 className="font-semibold text-xl mb-1">
                   {testimonials[currentIndex].name}

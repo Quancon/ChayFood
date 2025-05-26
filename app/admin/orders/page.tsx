@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { orderService, Order } from '../../services/orderService'
 
 export default function OrdersPage() {
@@ -11,7 +11,7 @@ export default function OrdersPage() {
   const [error, setError] = useState('')
 
   // Fetch orders based on current filters
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true)
     try {
       let result: Order[] = []
@@ -32,7 +32,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, searchQuery])
 
   // Fetch orders on component mount
   useEffect(() => {

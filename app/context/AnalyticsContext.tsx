@@ -171,29 +171,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         setRegionalData(null);
       }
       
-      // Check if any requests failed
-      const failedRequests = results.filter(result => result.status === 'rejected');
-      if (failedRequests.length > 0) {
-        console.error(`DEBUG: ${failedRequests.length} out of ${results.length} data requests failed`);
-        
-        // Get more detailed error messages from each failed request
-        const errorDetails = failedRequests.map((result: unknown) => {
-          const err = (result as { reason?: any }).reason;
-          // Extract detailed error message from API response if available
-          if (err && err.response && err.response.data && err.response.data.message) {
-            return err.response.data.message;
-          } else if (err && err.message) {
-            return err.message;
-          }
-          return 'Unknown error';
-        }).join('; ');
-        
-        setError(`API Error: ${errorDetails}`);
-      } else {
-        console.log('DEBUG: All requests succeeded');
-        setError(null);
-      }
       
+  
       // Update last fetch timestamp
       setLastFetchTime(new Date());
       

@@ -10,6 +10,18 @@ import { userService } from '../lib/services/userService';
 import { orderService } from '../services/orderService';
 import { paymentService } from '../services/paymentService';
 
+interface Address {
+  _id: string;
+  name?: string;
+  street: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  phone: string;
+  additionalInfo?: string;
+  isDefault?: boolean;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items,  totalAmount, isCartEmpty, clearCart } = useCart();
@@ -17,7 +29,7 @@ export default function CheckoutPage() {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [addresses, setAddresses] = useState<any[]>([]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'card' | 'banking' | 'stripe'>('banking');
   const [notes, setNotes] = useState<string>('');
@@ -38,13 +50,13 @@ export default function CheckoutPage() {
     const fetchAddresses = async () => {
       setIsLoadingAddresses(true);
       try {
-        let addressesData: any[] = [];
+        let addressesData: Address[] = [];
         try {
           const res = await userService.getAddresses();
           if (res.status === 'success' && Array.isArray(res.data) && res.data.length > 0) {
             addressesData = res.data;
           }
-        } catch (err) {
+        } catch {
           // ignore, fallback below
         }
         if (!addressesData.length) {
@@ -53,18 +65,18 @@ export default function CheckoutPage() {
             if (res.status === 'success' && res.data && Array.isArray(res.data.addresses)) {
               addressesData = res.data.addresses;
             }
-          } catch (err) {
+          } catch {
             addressesData = [];
           }
         }
         setAddresses(addressesData);
-        const defaultAddress = addressesData.find((addr: any) => addr.isDefault);
+        const defaultAddress = addressesData.find((addr: Address) => addr.isDefault);
         if (defaultAddress) {
           setSelectedAddress(defaultAddress._id);
         } else if (addressesData.length > 0) {
           setSelectedAddress(addressesData[0]._id);
         }
-      } catch (err) {
+      } catch {
         setAddresses([]);
       } finally {
         setIsLoadingAddresses(false);
@@ -160,10 +172,15 @@ export default function CheckoutPage() {
         // For COD payment method, go to order success page
         router.push(`/order/success?orderId=${orderId}`);
       }
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      setError(error.message || 'An error occurred during checkout');
-      toast.error(error.message || 'An error occurred during checkout');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Checkout error:', error);
+        setError(error.message || 'An error occurred during checkout');
+        toast.error(error.message || 'An error occurred during checkout');
+      } else {
+        setError('An error occurred during checkout');
+        toast.error('An error occurred during checkout');
+      }
     } finally {
       setIsLoading(false);
     }

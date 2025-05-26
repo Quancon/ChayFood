@@ -2,6 +2,29 @@ import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+// Định nghĩa kiểu cho payload checkout
+export interface CheckoutPayload {
+  cart: {
+    items: Array<{
+      menuItem: string;
+      quantity: number;
+      price?: number;
+      specialInstructions?: string;
+    }>;
+    totalAmount: number;
+  };
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    additionalInfo?: string;
+  };
+  notes?: string;
+  userId?: string;
+  paymentMethod: 'cod' | 'banking' | 'stripe';
+}
+
 // Helper function to get auth token
 const getAuthHeader = () => {
   if (typeof window !== 'undefined') {
@@ -53,7 +76,7 @@ export const paymentService = {
   },
 
   // Tạo Stripe Checkout Session với metadata cart, address, notes, user
-  createCheckoutSessionWithCart: async (payload: any) => {
+  createCheckoutSessionWithCart: async (payload: CheckoutPayload) => {
     const response = await axios.post(
       `${API_URL}/payment/checkout-session`,
       payload,

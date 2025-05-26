@@ -61,7 +61,7 @@ export default function ForgotPasswordForm({
       } else {
         setError(result.message);
       }
-    } catch (error) {
+    } catch {
       setError('Đã xảy ra lỗi khi gửi yêu cầu. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);

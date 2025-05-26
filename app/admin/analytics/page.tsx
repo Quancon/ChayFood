@@ -1,7 +1,6 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
 import AnalyticsFilters from '@/components/admin/analytics/AnalyticsFilters';
 import OrderStatistics from '@/components/admin/analytics/OrderStatistics';
 import CustomerStats from '@/components/admin/analytics/CustomerStats';
@@ -27,7 +26,6 @@ function AnalyticsHeader() {
   const { refreshData, isLoading, lastFetchTime } = useAnalytics();
   const [debugMode, setDebugMode] = useState(false);
   const [testingApi, setTestingApi] = useState(false);
-  const [apiStatus, setApiStatus] = useState<{success: boolean, message: string} | null>(null);
   
   // Initialize debug mode state & check auth token
   useEffect(() => {
@@ -59,7 +57,6 @@ function AnalyticsHeader() {
   // Test API connection
   const testApiConnection = async () => {
     setTestingApi(true);
-    setApiStatus(null);
     
     try {
       console.log('DEBUG: Testing API connection...');
@@ -67,24 +64,12 @@ function AnalyticsHeader() {
       
       if (response.ok) {
         console.log('DEBUG: API connection successful');
-        setApiStatus({
-          success: true,
-          message: `API is online. Status: ${response.status} ${response.statusText}`
-        });
       } else {
         console.error('DEBUG: API connection failed with status:', response.status);
-        setApiStatus({
-          success: false,
-          message: `API returned error: ${response.status} ${response.statusText}`
-        });
       }
     } catch (error: unknown) {
       const err = error as { message?: string };
       console.error('DEBUG: API connection test failed:', err?.message);
-      setApiStatus({
-        success: false,
-        message: `API connection failed: ${err?.message}`
-      });
     } finally {
       setTestingApi(false);
     }
@@ -196,7 +181,6 @@ function AnalyticsHeader() {
 function AnalyticsContent() {
   const { error } = useAnalytics();
   const [authToken, setAuthToken] = useState<string | null>(null);
-  const [apiStatus, setApiStatus] = useState<{success: boolean, message: string} | null>(null);
   
   // Check auth token
   useEffect(() => {
@@ -206,40 +190,6 @@ function AnalyticsContent() {
     }
   }, []);
   
-  // Test API connection function (shared with AnalyticsHeader)
-  const testApiConnection = async () => {
-    try {
-      console.log('DEBUG: Testing API connection from content...');
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
-      
-      if (response.ok) {
-        console.log('DEBUG: API connection successful');
-        setApiStatus({
-          success: true,
-          message: `API is online. Status: ${response.status} ${response.statusText}`
-        });
-      } else {
-        console.error('DEBUG: API connection failed with status:', response.status);
-        setApiStatus({
-          success: false,
-          message: `API returned error: ${response.status} ${response.statusText}`
-        });
-      }
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      console.error('DEBUG: API connection test failed:', err?.message);
-      setApiStatus({
-        success: false,
-        message: `API connection failed: ${err?.message}`
-      });
-    }
-  };
-  
-  // Run test on initial load
-  useEffect(() => {
-    testApiConnection();
-  }, []);
-  
   return (
     <div className="space-y-6">
       <AnalyticsHeader />
@@ -247,15 +197,6 @@ function AnalyticsContent() {
       <div className="bg-white p-6 rounded-lg shadow">
         <AnalyticsFilters />
       </div>
-      
-      {/* API status message */}
-      {apiStatus && (
-        <div className={`${apiStatus.success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'} border rounded-lg p-4 text-sm`}>
-          <div className="font-medium mb-1">{apiStatus.success ? 'API Connection Successful' : 'API Connection Problem'}</div>
-          <p>{apiStatus.message}</p>
-        </div>
-      )}
-      
       {error && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
           <div className="font-medium mb-1">Warning</div>

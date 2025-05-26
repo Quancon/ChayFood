@@ -42,7 +42,7 @@ export default function MenuItemForm({ menuItemId, mode }: MenuItemFormProps) {
   const [ingredientInput, setIngredientInput] = useState('');
   const [allergenInput, setAllergenInput] = useState('');
 
-  const { register, handleSubmit, setValue, formState: { errors }, watch, reset } = useForm<FormValues>({
+  const { register, handleSubmit, setValue, formState: { errors }, watch } = useForm<FormValues>({
     defaultValues: {
       name: '',
       description: '',
@@ -81,23 +81,23 @@ export default function MenuItemForm({ menuItemId, mode }: MenuItemFormProps) {
           const apiData = response.data.data || response.data;
           console.log('API response:', apiData);
           
-          // Set form values
-          Object.entries(apiData).forEach(([key, value]) => {
+          type ApiMenuItem = FormValues & { _id?: string };
+          Object.entries(apiData as ApiMenuItem).forEach(([key, value]) => {
             // Handle nutritionInfo object separately
-            if (key === 'nutritionInfo') {
-              Object.entries(value as any).forEach(([nutritionKey, nutritionValue]) => {
-                setValue(`nutritionInfo.${nutritionKey}` as any, nutritionValue);
+            if (key === 'nutritionInfo' && typeof value === 'object' && value !== null) {
+              Object.entries(value as NutritionInfo).forEach(([nutritionKey, nutritionValue]) => {
+                setValue(`nutritionInfo.${nutritionKey}` as keyof FormValues, nutritionValue as number);
               });
             } else {
-              setValue(key as any, value);
+              setValue(key as keyof FormValues, value as FormValues[keyof FormValues]);
             }
           });
           
           setImagePreview(apiData.image);
           setIsLoading(false);
-        } catch (err: any) {
-          console.error('Error fetching menu item:', err);
-          setError(err.message || 'Failed to load menu item');
+        } catch {
+          console.error('Error fetching menu item');
+        
           setIsLoading(false);
         }
       };
@@ -129,9 +129,9 @@ export default function MenuItemForm({ menuItemId, mode }: MenuItemFormProps) {
       
       // Redirect after successful submission
       router.push('/admin/menu');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error submitting form:', err);
-      setError(err.message || 'Failed to save menu item. Please try again.');
+      setError((err as Error).message || 'Failed to save menu item. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CheckCircle, ArrowRight, Home, ShoppingBag } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { orderService } from '../../services/orderService';
+import { orderService, Order } from '../../services/orderService';
 import { useCart } from '../../hooks/useCart';
 import CartToast from '../../components/cart-toast';
 
@@ -16,7 +16,7 @@ export default function OrderSuccessPage() {
   const orderId = searchParams.get('orderId');
   const sessionId = searchParams.get('session_id');
   
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { clearCart, message, hasMessage, dismissMessage } = useCart();
@@ -47,9 +47,9 @@ export default function OrderSuccessPage() {
         } else {
           throw new Error('Không thể tải thông tin đơn hàng');
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching order:', error);
-        setError(error.message || 'Đã xảy ra lỗi khi tải thông tin đơn hàng');
+        setError(error instanceof Error ? error.message : 'Đã xảy ra lỗi khi tải thông tin đơn hàng');
       } finally {
         setIsLoading(false);
       }
@@ -135,9 +135,9 @@ export default function OrderSuccessPage() {
             
             <div className="border-t border-b py-4 space-y-2 mb-4">
               <h3 className="text-md font-semibold mb-2">Món ăn đã đặt</h3>
-              {order.items.map((item: any, index: number) => (
+              {order.items.map((item, index) => (
                 <div key={index} className="flex justify-between">
-                  <span>{item.quantity}x {item.menuItem.name}</span>
+                  <span>{item.quantity}x {typeof item.menuItem === 'object' ? item.menuItem.name : 'Sản phẩm'}</span>
                   <span>{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</span>
                 </div>
               ))}

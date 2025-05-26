@@ -85,7 +85,7 @@ export default function ResetPasswordForm({
       } else {
         setError(result.message);
       }
-    } catch (error) {
+    } catch {
       setError('Đã xảy ra lỗi. Vui lòng thử lại sau.');
     } finally {
       setIsLoading(false);

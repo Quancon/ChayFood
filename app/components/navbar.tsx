@@ -28,12 +28,7 @@ export default function Navbar() {
   const [lastRefresh, setLastRefresh] = useState<number | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   
-  // Hide navbar completely on admin pages
-  if (pathname?.startsWith('/admin')) {
-    return null
-  }
-  
-  // Try refreshing auth state on mount if we have a token but no user
+  // Always call hooks first, then conditionally render
   useEffect(() => {
     const checkAuthState = async () => {
       // Kiểm tra nếu đang refresh, hoặc đã refresh gần đây, tránh lặp vô hạn
@@ -56,7 +51,6 @@ export default function Navbar() {
     checkAuthState();
   }, [isAuthenticated, isLoading, refreshAuthState, lastRefresh, isRefreshing]);
   
-  // Handle scroll effects
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10)
@@ -66,7 +60,6 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
   
-  // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = () => {
       setShowUserMenu(false)
@@ -80,6 +73,10 @@ export default function Navbar() {
       document.removeEventListener('click', handleClickOutside)
     }
   }, [showUserMenu])
+  
+  if (pathname?.startsWith('/admin')) {
+    return null
+  }
   
   const openSignIn = () => {
     setAuthModalView('signin')

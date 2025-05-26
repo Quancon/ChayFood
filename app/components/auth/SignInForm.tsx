@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
 import { useRouter } from 'next/navigation'
@@ -20,7 +20,6 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState<string | null>(null)
-  const [redirectPath, setRedirectPath] = useState<string | null>(null)
   
   const form = useForm<FormValues>({
     defaultValues: {
@@ -215,7 +214,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
       
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <button
             onClick={() => {
               const event = new CustomEvent('switchAuthView', { detail: 'signup' });
