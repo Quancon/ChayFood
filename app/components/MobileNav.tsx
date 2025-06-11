@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bars3Icon, XMarkIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useCart } from '../hooks/useCart'
-import { useAuth } from '../context/AuthContext'
+import { useCart } from '../[lng]/hooks/useCart'
+import { useAuth } from '../[lng]/context/AuthContext'
 import AuthModal from './auth/AuthModal'
+import { useTranslation } from 'react-i18next'
 
 interface User {
   _id: string;
@@ -16,6 +17,7 @@ interface User {
 }
 
 interface MobileNavProps {
+  lng: string;
   isAuthenticated?: boolean;
   user?: User | null;
   cartItemCount?: number;
@@ -25,13 +27,15 @@ interface MobileNavProps {
 }
 
 export default function MobileNav({
+  lng,
   isAuthenticated: propsIsAuthenticated,
   user: propsUser,
   cartItemCount: propsCartItemCount,
   onSignIn: propsOnSignIn,
   onSignUp: propsOnSignUp,
   onLogout: propsOnLogout
-}: MobileNavProps = {}) {
+}: MobileNavProps) {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const { totalItems } = useCart();
@@ -48,18 +52,17 @@ export default function MobileNav({
   const isAdmin = user?.role === 'admin';
 
   const regularMenuItems = [
-    { href: '/', label: 'Trang chủ' },
-    { href: '/menu', label: 'Thực đơn' },
-    { href: '/party', label: 'Đặt tiệc' },
-    { href: '/subscriptions', label: 'Đăng ký gói' },
-    { href: '/about', label: 'Giới thiệu' },
+    { href: `/${lng}`, label: t('nav.home') },
+    { href: `/${lng}/menu`, label: t('nav.menu') },
+    { href: `/${lng}/subscriptions`, label: t('nav.subscriptions') },
+    { href: `/${lng}/about`, label: t('nav.about') },
   ];
   
   const adminMenuItems = [
-    { href: '/admin/dashboard', label: 'Dashboard' },
-    { href: '/admin/orders', label: 'Manage Orders' },
-    { href: '/admin/menu', label: 'Manage Menu' },
-    { href: '/admin/users', label: 'Manage Users' },
+    { href: `/${lng}/admin/dashboard`, label: t('nav.dashboard') },
+    { href: `/${lng}/admin/orders`, label: t('nav.manage_orders') },
+    { href: `/${lng}/admin/menu`, label: t('nav.manage_menu') },
+    { href: `/${lng}/admin/users`, label: t('nav.manage_users') },
   ];
   
   const menuItems = isAdmin ? adminMenuItems : regularMenuItems;
@@ -84,6 +87,14 @@ export default function MobileNav({
     }
   }
 
+  // Helper function to check if a path is active
+  const isActivePath = (href: string) => {
+    if (href === `/${lng}` && pathname === `/${lng}`) {
+      return true;
+    }
+    return pathname?.startsWith(href);
+  };
+
   return (
     <>
       <div className="md:hidden">
@@ -91,7 +102,7 @@ export default function MobileNav({
           {/* Only show cart for regular users */}
           {!isAdmin && (
             <Link
-              href="/cart"
+              href={`/${lng}/cart`}
               className="relative p-2 mr-2 text-gray-700"
             >
               <ShoppingCartIcon className="h-6 w-6" />
@@ -128,7 +139,7 @@ export default function MobileNav({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`block py-2 ${pathname === item.href ? 'text-green-600 font-medium' : 'text-gray-700'} hover:text-green-600`}
+                    className={`block py-2 ${isActivePath(item.href) ? 'text-green-600 font-medium' : 'text-gray-700'} hover:text-green-600`}
                     onClick={() => setIsOpen(false)}
                   >
                     {item.label}
@@ -140,25 +151,25 @@ export default function MobileNav({
                       {!isAdmin && (
                         <>
                           <Link
-                            href="/account/profile"
+                            href={`/${lng}/account/profile`}
                             className="block py-2 text-gray-700 hover:text-green-600"
                             onClick={() => setIsOpen(false)}
                           >
-                            Profile
+                            {t('nav.profile')}
                           </Link>
                           <Link
-                            href="/account/orders"
+                            href={`/${lng}/account/orders`}
                             className="block py-2 text-gray-700 hover:text-green-600"
                             onClick={() => setIsOpen(false)}
                           >
-                            My Orders
+                            {t('nav.myOrders')}
                           </Link>
                           <Link
-                            href="/account/subscriptions"
+                            href={`/${lng}/account/subscriptions`}
                             className="block py-2 text-gray-700 hover:text-green-600"
                             onClick={() => setIsOpen(false)}
                           >
-                            My Subscriptions
+                            {t('nav.mySubscriptions')}
                           </Link>
                         </>
                       )}
@@ -171,7 +182,7 @@ export default function MobileNav({
                         }}
                         className="block w-full text-left py-2 text-gray-700 hover:text-red-600"
                       >
-                        Logout
+                        {t('nav.logout')}
                       </button>
                     </>
                   ) : (
@@ -180,13 +191,13 @@ export default function MobileNav({
                         className="block py-2 text-gray-700 hover:text-green-600 w-full text-left"
                         onClick={openSignIn}
                       >
-                        Sign In
+                        {t('nav.signIn')}
                       </button>
                       <button
                         className="block py-2 text-green-600 font-semibold hover:text-green-700 w-full text-left"
                         onClick={openSignUp}
                       >
-                        Sign Up
+                        {t('nav.signUp')}
                       </button>
                     </>
                   )}

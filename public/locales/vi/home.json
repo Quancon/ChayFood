@@ -1,0 +1,31 @@
+{
+  "hero": {
+    "title": "Kế hoạch bữa ăn hàng tuần cho lối sống lành mạnh",
+    "subtitle": "Trải nghiệm các bữa ăn tươi ngon, bổ dưỡng và sạch",
+    "orderNow": "Đặt Ngay"
+  },
+  "popularDishes": {
+    "title": "Món Ăn Phổ Biến",
+    "error": "Không thể tải các món ăn phổ biến.",
+    "noData": "Chưa có dữ liệu về các món ăn phổ biến."
+  },
+  "howItWorks": {
+    "title": "Cách Thức Hoạt Động",
+    "step1": {
+      "title": "Chọn Gói Của Bạn",
+      "description": "Lựa chọn gói bữa ăn phù hợp với nhu cầu của bạn và điền thông tin giao hàng"
+    },
+    "step2": {
+      "title": "Chayfood Nấu Ăn",
+      "description": "Chúng tôi lựa chọn những nguyên liệu tốt nhất và nấu trong nhà bếp công nghiệp hiện đại"
+    },
+    "step3": {
+      "title": "Giao Hàng",
+      "description": "Đội ngũ giao hàng của Chayfood sẽ giao bữa ăn đến tận cửa nhà bạn mỗi ngày"
+    },
+    "step4": {
+      "title": "Thưởng Thức",
+      "description": "Không cần suy nghĩ, mua sắm hay nấu nướng, chỉ cần hâm nóng và thưởng thức!"
+    }
+  }
+} 

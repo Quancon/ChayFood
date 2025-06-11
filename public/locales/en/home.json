@@ -1,0 +1,31 @@
+{
+  "hero": {
+    "title": "Weekly meal plans for a healthy lifestyle",
+    "subtitle": "Experience fresh, delicious, and nutritious clean meals",
+    "orderNow": "Order Now"
+  },
+  "popularDishes": {
+    "title": "Popular Dishes",
+    "error": "Could not load popular dishes.",
+    "noData": "No popular dishes data yet."
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "step1": {
+      "title": "Choose Your Plan",
+      "description": "Select a meal plan that fits your needs and fill in the delivery information"
+    },
+    "step2": {
+      "title": "Chayfood Cooks",
+      "description": "We select the best ingredients and cook in a modern industrial kitchen"
+    },
+    "step3": {
+      "title": "Delivery",
+      "description": "Chayfood's delivery team will deliver meals to your door every day"
+    },
+    "step4": {
+      "title": "Enjoy",
+      "description": "No need to think, shop, or cook, just heat and enjoy!"
+    }
+  }
+} 

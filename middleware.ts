@@ -1,17 +1,51 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+// @ts-ignore
+import acceptLanguage from 'accept-language'
+import { fallbackLng, languages } from '@/i18n/settings'
 
-export function middleware(request: NextRequest) {
-  // Get the pathname of the request
-  const pathname = request.nextUrl.pathname;
+acceptLanguage.languages(languages)
+
+export const config = {
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|sw.js|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|json|txt|webmanifest)).*)'
+  ]
+}
+
+const cookieName = 'i18next'
+
+export function middleware(req: NextRequest) {
+  let lng
+  if (req.cookies.has(cookieName)) lng = acceptLanguage.get(req.cookies.get(cookieName)?.value)
+  if (!lng) lng = acceptLanguage.get(req.headers.get('Accept-Language'))
+  if (!lng) lng = fallbackLng
+
+  // Redirect if lng in path is not supported
+  if (
+    !languages.some(loc => req.nextUrl.pathname.startsWith(`/${loc}`)) &&
+    !req.nextUrl.pathname.startsWith('/_next')
+  ) {
+    return NextResponse.redirect(new URL(`/${lng}${req.nextUrl.pathname}`, req.url))
+  }
+
+  const referer = req.headers.get('referer')
+  if (referer) {
+    const refererUrl = new URL(referer)
+    const lngInReferer = languages.find((l) => refererUrl.pathname.startsWith(`/${l}`))
+    const response = NextResponse.next()
+    if (lngInReferer) response.cookies.set(cookieName, lngInReferer)
+    return response
+  }
   
-  // Only process the root path '/'
-  if (pathname === '/') {
+  // Get the pathname of the request
+  const pathname = req.nextUrl.pathname;
+
+  // Only process the root path '/' or language-prefixed root
+  if (pathname === `/${lng}` || pathname === '/') {
     // Get the auth token from cookies
-    const authToken = request.cookies.get('authToken')?.value;
+    const authToken = req.cookies.get('authToken')?.value;
     
     // Check if there's a current user cookie that contains role information
-    const currentUserCookie = request.cookies.get('currentUser')?.value;
+    const currentUserCookie = req.cookies.get('currentUser')?.value;
     let isAdmin = false;
     
     if (currentUserCookie) {
@@ -25,14 +59,9 @@ export function middleware(request: NextRequest) {
     
     // If the user is authenticated and is an admin, redirect to admin dashboard
     if (authToken && isAdmin) {
-      return NextResponse.redirect(new URL('/admin', request.url));
+      return NextResponse.redirect(new URL(`/${lng}/admin`, req.url));
     }
   }
-  
-  return NextResponse.next();
-}
 
-// Only run middleware on homepage requests
-export const config = {
-  matcher: '/',
-}; 
+  return NextResponse.next()
+} 

@@ -1,37 +1,46 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
+import { useTranslation } from 'react-i18next'
 
-const initiatives = [
-  {
-    id: 1,
-    title: "Sustainable Packaging",
-    description: "We use eco-friendly packaging materials that are biodegradable and recyclable.",
-    icon: "/icons/leaf.svg"
-  },
-  {
-    id: 2,
-    title: "Carbon Footprint",
-    description: "We actively work to reduce our carbon footprint through efficient delivery routes.",
-    icon: "/icons/globe.svg"
-  },
-  {
-    id: 3,
-    title: "Zero Waste",
-    description: "Our meal planning system helps minimize food waste in our operations.",
-    icon: "/icons/sparkles.svg"
-  }
-]
+interface EnvironmentalProps {
+  lng: string;
+}
 
-export default function Environmental() {
+
+export default function Environmental({ lng }: EnvironmentalProps) {
+  const { t } = useTranslation('common');
+
+  const initiatives = [
+    {
+      id: 1,
+      title: t('environmental.initiative1.title'),
+      description: t('environmental.initiative1.description'),
+      icon: "/icons/leaf.svg"
+    },
+    {
+      id: 2,
+      title: t('environmental.initiative2.title'),
+      description: t('environmental.initiative2.description'),
+      icon: "/icons/globe.svg"
+    },
+    {
+      id: 3,
+      title: t('environmental.initiative3.title'),
+      description: t('environmental.initiative3.description'),
+      icon: "/icons/sparkles.svg"
+    }
+  ];
+
   return (
     <section className="py-20 bg-green-50">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-          Chung tay bảo vệ
-          <span className="text-green-600"> Môi trường</span>
+          {t('environmental.titlePart1')}
+          <span className="text-green-600"> {t('environmental.titlePart2')}</span>
         </h2>
         <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
-          Chúng tôi cam kết thực hiện các sáng kiến thân thiện với môi trường để góp phần bảo vệ hành tinh của chúng ta
+          {t('environmental.subtitle')}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -63,11 +72,11 @@ export default function Environmental() {
         </div>
 
         <div className="mt-12 text-center">
-          <a
-            href="/about-us#environmental"
+          <Link
+            href={`/${lng}/about-us#environmental`}
             className="inline-flex items-center text-green-600 hover:text-green-700 font-semibold"
           >
-            Tìm hiểu thêm về cam kết môi trường của chúng tôi
+            {t('environmental.learnMore')}
             <svg
               className="w-5 h-5 ml-2"
               fill="none"
@@ -81,7 +90,7 @@ export default function Environmental() {
                 d="M9 5l7 7-7 7"
               />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

@@ -7,6 +7,7 @@ import SignInForm from './SignInForm'
 import SignUpForm from './SignUpForm'
 import ForgotPasswordForm from './ForgotPasswordForm'
 import ResetPasswordForm from './ResetPasswordForm'
+import { useParams } from 'next/navigation'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -22,6 +23,8 @@ export default function AuthModal({
   resetToken 
 }: AuthModalProps) {
   const [view, setView] = useState<'signin' | 'signup' | 'forgotPassword' | 'resetPassword'>(initialView)
+  const params = useParams()
+  const { lng } = params as { lng: string }
   
   // Reset to initial view when modal is opened
   useEffect(() => {
@@ -92,15 +95,15 @@ export default function AuthModal({
   const renderForm = () => {
     switch (view) {
       case 'signin':
-        return <SignInForm onSuccess={onClose} />;
+        return <SignInForm onSuccess={onClose} lng={lng} />;
       case 'signup':
-        return <SignUpForm onSuccess={() => setView('signin')} onSignInClick={() => setView('signin')} />;
+        return <SignUpForm onSuccess={() => setView('signin')} onSignInClick={() => setView('signin')} lng={lng} />;
       case 'forgotPassword':
-        return <ForgotPasswordForm onClose={onClose} onToggleForm={() => setView('signin')} />;
+        return <ForgotPasswordForm onClose={onClose} onToggleForm={() => setView('signin')} lng={lng} />;
       case 'resetPassword':
-        return <ResetPasswordForm onClose={onClose} tokenFromProps={resetToken} />;
+        return <ResetPasswordForm onClose={onClose} tokenFromProps={resetToken} lng={lng} />;
       default:
-        return <SignInForm onSuccess={onClose} />;
+        return <SignInForm onSuccess={onClose} lng={lng} />;
     }
   };
 

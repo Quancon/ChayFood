@@ -1,6 +1,6 @@
 'use client';
 
-import { cartService } from '../../services/cartService';
+import { cartService } from '../../[lng]/services/cartService';
 import { MenuItem } from '../services/types';
 
 export interface CartItem {
@@ -17,7 +17,14 @@ export interface CartItem {
   notes?: string;
 }
 
-export async function getCart() {
+// Define a common return type for cart actions
+interface CartActionResponse {
+  success: boolean;
+  items?: CartItem[];
+  message?: string;
+}
+
+export async function getCart(): Promise<CartActionResponse> {
   try {
     const data = await cartService.getCart();
     // Giả sử backend trả về { cart: { items: [...] } }
@@ -32,7 +39,7 @@ export async function getCart() {
   }
 }
 
-export async function addToCart(menuItem: MenuItem, quantity: number, specialInstructions?: string) {
+export async function addToCart(menuItem: MenuItem, quantity: number, specialInstructions?: string): Promise<CartActionResponse> {
   try {
     const data = await cartService.addToCart(menuItem._id, quantity, specialInstructions);
     if (data && data.cart && Array.isArray(data.cart.items)) {
@@ -40,12 +47,13 @@ export async function addToCart(menuItem: MenuItem, quantity: number, specialIns
     } else {
       return await getCart();
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error adding item to cart:', error);
+    return { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Failed to add item to cart' };
   }
 }
 
-export async function updateCartItem(itemId: string, quantity: number, specialInstructions?: string) {
+export async function updateCartItem(itemId: string, quantity: number, specialInstructions?: string): Promise<CartActionResponse> {
   try {
     const data = await cartService.updateCartItem(itemId, quantity, specialInstructions);
     if (data && data.cart && Array.isArray(data.cart.items)) {
@@ -53,13 +61,13 @@ export async function updateCartItem(itemId: string, quantity: number, specialIn
     } else {
       return await getCart();
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error updating cart item:', error);
-   
+    return { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Failed to update cart item' };
   }
 }
 
-export async function removeFromCart(itemId: string) {
+export async function removeFromCart(itemId: string): Promise<CartActionResponse> {
   try {
     const data = await cartService.removeFromCart(itemId);
     if (data && data.cart && Array.isArray(data.cart.items)) {
@@ -67,18 +75,19 @@ export async function removeFromCart(itemId: string) {
     } else {
       return await getCart();
     }
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error removing item from cart:', error);
-  
+    return { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Failed to remove item from cart' };
   }
 }
 
-export async function clearCart() {
+export async function clearCart(): Promise<CartActionResponse> {
   try {
     await cartService.clearCart();
     return { success: true };
   } catch (error: unknown) {
     console.error('Error clearing cart:', error);
+    return { success: false, message: (error instanceof Error ? error.message : String(error)) || 'Failed to clear cart' };
   }
 }
 

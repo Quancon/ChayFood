@@ -14,7 +14,7 @@ import {
   TagIcon,
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../[lng]/context/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: HomeIcon },
