@@ -4,6 +4,7 @@ import { I18nextProvider } from 'react-i18next';
 import { createInstance } from 'i18next';
 import { initReactI18next } from 'react-i18next/initReactI18next';
 import { fallbackLng, languages } from '@/i18n/settings';
+import { useEffect } from 'react';
 
 interface TranslationsProviderProps {
   children: React.ReactNode;
@@ -37,6 +38,12 @@ export default function TranslationsProvider({
           useSuspense: false,
       }
     });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedLanguage', locale);
+    }
+  }, [locale]);
 
   return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
 } 
