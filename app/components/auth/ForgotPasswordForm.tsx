@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../[lng]/context/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Alert, AlertDescription } from '../ui/alert';
 
 const formSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
@@ -26,6 +26,7 @@ interface ForgotPasswordFormProps {
   onClose?: () => void;
   onSuccess?: () => void;
   onToggleForm?: () => void;
+  lng: string;
 }
 
 export default function ForgotPasswordForm({

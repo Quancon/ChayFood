@@ -2,47 +2,49 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
-
-const testimonials = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    role: "Fitness Enthusiast",
-    image: "/testimonials/profile1.jpg",
-    content: "The meal plans have transformed my lifestyle. The food is not only healthy but absolutely delicious!"
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    role: "Business Professional",
-    image: "/testimonials/profile2.jpg",
-    content: "As a busy professional, having healthy meals delivered has been a game-changer. Great service!"
-  },
-  {
-    id: 3,
-    name: "Emily Rodriguez",
-    role: "Yoga Instructor",
-    image: "/testimonials/profile3.jpg",
-    content: "I recommend Chayfood to all my clients. The quality and variety of meals are exceptional."
-  }
-]
+import { useTranslation } from 'react-i18next'
 
 export default function Testimonials() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const { t } = useTranslation('common');
+
+  const testimonialsData = [
+    {
+      id: 1,
+      name: t('testimonials.name1'),
+      role: t('testimonials.role1'),
+      image: "/testimonials/profile1.jpg",
+      content: t('testimonials.content1')
+    },
+    {
+      id: 2,
+      name: t('testimonials.name2'),
+      role: t('testimonials.role2'),
+      image: "/testimonials/profile2.jpg",
+      content: t('testimonials.content2')
+    },
+    {
+      id: 3,
+      name: t('testimonials.name3'),
+      role: t('testimonials.role3'),
+      image: "/testimonials/profile3.jpg",
+      content: t('testimonials.content3')
+    }
+  ];
 
   const next = () => {
-    setCurrentIndex((current) => (current + 1) % testimonials.length)
+    setCurrentIndex((current) => (current + 1) % testimonialsData.length)
   }
 
   const prev = () => {
-    setCurrentIndex((current) => (current - 1 + testimonials.length) % testimonials.length)
+    setCurrentIndex((current) => (current - 1 + testimonialsData.length) % testimonialsData.length)
   }
 
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-          Câu chuyện khách hàng
+          {t('testimonials.title')}
         </h2>
         <div className="relative max-w-4xl mx-auto">
           <button
@@ -94,25 +96,25 @@ export default function Testimonials() {
               >
                 <div className="w-24 h-24 mx-auto mb-6 relative">
                   <Image
-                    src={testimonials[currentIndex].image}
-                    alt={testimonials[currentIndex].name}
+                    src={testimonialsData[currentIndex].image}
+                    alt={testimonialsData[currentIndex].name}
                     fill
                     className="rounded-full object-cover"
                   />
                 </div>
                 <p className="text-gray-600 text-lg mb-6 italic">
-                  &quot;{testimonials[currentIndex].content}&quot;
+                  &quot;{testimonialsData[currentIndex].content}&quot;
                 </p>
                 <h3 className="font-semibold text-xl mb-1">
-                  {testimonials[currentIndex].name}
+                  {testimonialsData[currentIndex].name}
                 </h3>
-                <p className="text-gray-500">{testimonials[currentIndex].role}</p>
+                <p className="text-gray-500">{testimonialsData[currentIndex].role}</p>
               </motion.div>
             </AnimatePresence>
           </div>
 
           <div className="flex justify-center mt-8 space-x-2">
-            {testimonials.map((_, index) => (
+            {testimonialsData.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}

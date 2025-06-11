@@ -4,14 +4,17 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { promotionService } from '@/lib/services';
 import { Promotion } from '@/lib/services/types';
+import { useTranslation } from 'react-i18next';
 
 interface PromotionFormProps {
   initialData?: Partial<Promotion>;
   isEditing?: boolean;
+  lng: string;
 }
 
-export default function PromotionForm({ initialData, isEditing = false }: PromotionFormProps) {
+export default function PromotionForm({ initialData, isEditing = false, lng }: PromotionFormProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   
@@ -65,14 +68,14 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
         }
       }
       
-      router.push('/admin/promotions');
+      router.push(`/${lng}/admin/promotions`);
       router.refresh();
     } catch (err: unknown) {
       console.error('Error submitting promotion:', err);
       if (err instanceof Error) {
-        setError(err.message || 'Failed to save promotion. Please try again.');
+        setError(t('promotionForm.saveError', { message: err.message }));
       } else {
-        setError('Failed to save promotion. Please try again.');
+        setError(t('promotionForm.saveErrorGeneric'));
       }
     } finally {
       setIsSubmitting(false);
@@ -83,59 +86,66 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
     <div className="bg-white p-6 rounded-lg shadow-md max-w-3xl mx-auto">
       <div className="mb-6">
         <h2 className="text-xl font-bold">
-          {isEditing ? 'Edit Promotion' : 'Create New Promotion'}
+          {isEditing ? t('promotionForm.editTitle') : t('promotionForm.createTitle')}
         </h2>
         <p className="text-gray-500">
           {isEditing 
-            ? 'Update the details of an existing promotion' 
-            : 'Add a new promotion or flash sale to your store'}
+            ? t('promotionForm.editDescription') 
+            : t('promotionForm.createDescription')}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+            <strong className="font-bold">{t('common.error')}: </strong>
+            <span className="block sm:inline">{error}</span>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Promotion Name</label>
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.nameLabel')}</label>
             <input 
               type="text" 
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full p-2 border rounded-md"
               required
-              placeholder="Summer Sale"
+              placeholder={t('promotionForm.namePlaceholder')}
             />
-            <span className="text-xs text-gray-500 mt-1">Minimum 3 characters</span>
+            <span className="text-xs text-gray-500 mt-1">{t('promotionForm.nameHint')}</span>
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Promotion Code</label>
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.codeLabel')}</label>
             <input 
               type="text" 
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               className="w-full p-2 border rounded-md"
               required
-              placeholder="SUMMER2023"
+              placeholder={t('promotionForm.codePlaceholder')}
             />
-            <span className="text-xs text-gray-500 mt-1">Users will enter this code at checkout</span>
+            <span className="text-xs text-gray-500 mt-1">{t('promotionForm.codeHint')}</span>
           </div>
         </div>
         
         <div>
-          <label className="block text-sm font-medium mb-1">Description</label>
+          <label className="block text-sm font-medium mb-1">{t('promotionForm.descriptionLabel')}</label>
           <textarea 
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="w-full p-2 border rounded-md min-h-[100px]"
             required
-            placeholder="Get 15% off on all summer items!"
+            placeholder={t('promotionForm.descriptionPlaceholder')}
           />
-          <span className="text-xs text-gray-500 mt-1">Explain what this promotion offers to customers</span>
+          <span className="text-xs text-gray-500 mt-1">{t('promotionForm.descriptionHint')}</span>
         </div>
         
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Promotion Type</label>
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.promotionTypeLabel')}</label>
             <select 
               value={promotionType}
               onChange={(e) => {
@@ -146,22 +156,22 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
               }}
               className="w-full p-2 border rounded-md"
             >
-              <option value="regular">Regular Promotion</option>
-              <option value="flash_sale">Flash Sale</option>
+              <option value="regular">{t('promotionForm.regularPromotion')}</option>
+              <option value="flash_sale">{t('promotionForm.flashSale')}</option>
             </select>
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Discount Type</label>
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.discountTypeLabel')}</label>
             <select 
               value={type}
               onChange={(e) => setType(e.target.value as Promotion['type'])}
               className="w-full p-2 border rounded-md"
             >
-              <option value="percentage">Percentage Discount (%)</option>
-              <option value="fixed">Fixed Amount (VND)</option>
-              <option value="free_item">Free Item</option>
-              <option value="free_delivery">Free Delivery</option>
+              <option value="percentage">{t('promotionForm.percentageDiscount')}</option>
+              <option value="fixed">{t('promotionForm.fixedAmount')}</option>
+              <option value="free_item">{t('promotionForm.freeItem')}</option>
+              <option value="free_delivery">{t('promotionForm.freeDelivery')}</option>
             </select>
           </div>
         </div>
@@ -170,10 +180,10 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
           <div>
             <label className="block text-sm font-medium mb-1">
               {type === 'percentage' 
-                ? 'Discount Percentage (%)' 
+                ? t('promotionForm.discountPercentage') 
                 : type === 'fixed' 
-                  ? 'Discount Amount (VND)' 
-                  : 'Value'}
+                  ? t('promotionForm.discountAmount') 
+                  : t('promotionForm.value')}
             </label>
             <input 
               type="number"
@@ -187,7 +197,7 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Minimum Order Value (VND)</label>
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.minOrderValueLabel')}</label>
             <input 
               type="number"
               min={0}
@@ -196,12 +206,12 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
               onChange={(e) => setMinOrderValue(Number(e.target.value))}
               className="w-full p-2 border rounded-md"
             />
-            <span className="text-xs text-gray-500 mt-1">0 = No minimum</span>
+            <span className="text-xs text-gray-500 mt-1">{t('promotionForm.minOrderValueHint')}</span>
           </div>
           
           {type === 'percentage' && (
             <div>
-              <label className="block text-sm font-medium mb-1">Maximum Discount (VND)</label>
+              <label className="block text-sm font-medium mb-1">{t('promotionForm.maxDiscountLabel')}</label>
               <input 
                 type="number"
                 min={0}
@@ -210,15 +220,15 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
                 onChange={(e) => setMaxDiscount(Number(e.target.value))}
                 className="w-full p-2 border rounded-md"
               />
-              <span className="text-xs text-gray-500 mt-1">0 = No maximum</span>
+              <span className="text-xs text-gray-500 mt-1">{t('promotionForm.maxDiscountHint')}</span>
             </div>
           )}
         </div>
         
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium mb-1">Start Date</label>
-            <input 
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.startDateLabel')}</label>
+            <input
               type="date"
               value={startDate.toISOString().split('T')[0]}
               onChange={(e) => setStartDate(new Date(e.target.value))}
@@ -228,8 +238,8 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">End Date</label>
-            <input 
+            <label className="block text-sm font-medium mb-1">{t('promotionForm.endDateLabel')}</label>
+            <input
               type="date"
               value={endDate.toISOString().split('T')[0]}
               onChange={(e) => setEndDate(new Date(e.target.value))}
@@ -239,97 +249,86 @@ export default function PromotionForm({ initialData, isEditing = false }: Promot
           </div>
         </div>
         
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium mb-1">Total Available Codes</label>
-            <input 
-              type="number"
-              min={1}
-              value={totalCodes}
-              onChange={(e) => setTotalCodes(Number(e.target.value))}
-              className="w-full p-2 border rounded-md"
-              required
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+          />
+          <label htmlFor="isActive" className="text-sm font-medium">{t('promotionForm.isActiveLabel')}</label>
+        </div>
+
+        {promotionType === 'flash_sale' && (
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="isFlashSale"
+              checked={isFlashSale}
+              onChange={(e) => setIsFlashSale(e.target.checked)}
+              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
             />
-            <span className="text-xs text-gray-500 mt-1">Maximum number of times this code can be used</span>
+            <label htmlFor="isFlashSale" className="text-sm font-medium">{t('promotionForm.isFlashSaleLabel')}</label>
           </div>
-          
-          {isEditing && (
+        )}
+
+        {promotionType === 'flash_sale' && (
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="shouldNotify"
+              checked={shouldNotify}
+              onChange={(e) => setShouldNotify(e.target.checked)}
+              className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+            />
+            <label htmlFor="shouldNotify" className="text-sm font-medium">{t('promotionForm.shouldNotifyLabel')}</label>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {promotionType === 'regular' && (
             <div>
-              <label className="block text-sm font-medium mb-1">Used Codes</label>
+              <label className="block text-sm font-medium mb-1">{t('promotionForm.totalCodesLabel')}</label>
+              <input 
+                type="number"
+                min={0}
+                value={totalCodes}
+                onChange={(e) => setTotalCodes(Number(e.target.value))}
+                className="w-full p-2 border rounded-md"
+                required
+              />
+              <span className="text-xs text-gray-500 mt-1">{t('promotionForm.totalCodesHint')}</span>
+            </div>
+          )}
+          
+          {isEditing && promotionType === 'regular' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('promotionForm.usedCodesLabel')}</label>
               <input 
                 type="number"
                 value={initialData?.usedCodes || 0}
-                disabled
-                className="w-full p-2 border rounded-md bg-gray-100"
+                className="w-full p-2 border rounded-md bg-gray-100 cursor-not-allowed"
+                readOnly
               />
-              <span className="text-xs text-gray-500 mt-1">Number of times this code has been used</span>
             </div>
           )}
         </div>
-        
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="border p-4 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Active Status</p>
-                <span className="text-xs text-gray-500">Enable or disable this promotion</span>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={isActive}
-                  onChange={(e) => setIsActive(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-              </label>
-            </div>
-          </div>
-          
-          {!isEditing && promotionType === 'flash_sale' && (
-            <div className="border p-4 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium">Send Notification</p>
-                  <span className="text-xs text-gray-500">Notify users about this flash sale</span>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={shouldNotify}
-                    onChange={(e) => setShouldNotify(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
-        
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-            {error}
-          </div>
-        )}
-        
-        <div className="flex justify-between pt-4">
-          <button
+
+        <div className="flex justify-end gap-3">
+          <button 
             type="button"
-            onClick={() => router.push('/admin/promotions')}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            onClick={() => router.push(`/${lng}/admin/promotions`)}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button 
-            type="submit" 
+            type="submit"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             disabled={isSubmitting}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
           >
-            {isSubmitting ? 
-              (isEditing ? 'Updating...' : 'Creating...') : 
-              (isEditing ? 'Update Promotion' : 'Create Promotion')
-            }
+            {isSubmitting ? t('common.saving') : (isEditing ? t('common.saveChanges') : t('common.create'))}
           </button>
         </div>
       </form>

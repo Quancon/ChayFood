@@ -1,56 +1,59 @@
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-
-const partners = [
-  {
-    id: 1,
-    name: "Partner 1",
-    logo: "/partners/partner1.png"
-  },
-  {
-    id: 2,
-    name: "Partner 2",
-    logo: "/partners/partner2.png"
-  },
-  {
-    id: 3,
-    name: "Partner 3",
-    logo: "/partners/partner3.png"
-  }
-];
-
-const clients = [
-  {
-    id: 1,
-    name: "Client 1",
-    logo: "/clients/client1.png"
-  },
-  {
-    id: 2,
-    name: "Client 2",
-    logo: "/clients/client2.png"
-  },
-  {
-    id: 3,
-    name: "Client 3",
-    logo: "/clients/client3.png"
-  }
-];
+import { useTranslation } from 'react-i18next'
 
 export default function Partners() {
+  const { t } = useTranslation( 'common');
+
+  const partnersData = [
+    {
+      id: 1,
+      name: t('partners.partner1.name'),
+      logo: "/partners/partner1.png"
+    },
+    {
+      id: 2,
+      name: t('partners.partner2.name'),
+      logo: "/partners/partner2.png"
+    },
+    {
+      id: 3,
+      name: t('partners.partner3.name'),
+      logo: "/partners/partner3.png"
+    }
+  ];
+  
+  const clientsData = [
+    {
+      id: 1,
+      name: t('partners.client1.name'),
+      logo: "/clients/client1.png"
+    },
+    {
+      id: 2,
+      name: t('partners.client2.name'),
+      logo: "/clients/client2.png"
+    },
+    {
+      id: 3,
+      name: t('partners.client3.name'),
+      logo: "/clients/client3.png"
+    }
+  ];
+
   return (
     <section className="py-20">
       <div className="container mx-auto px-4">
         {/* Partners Section */}
         <div className="mb-20">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-            Đối tác
+            {t('partners.title')}
           </h2>
           <p className="text-gray-600 text-center mb-12">
-            Chúng tôi hợp tác với các nhà cung cấp hàng đầu để đảm bảo chất lượng trải nghiệm tốt nhất
+            {t('partners.subtitle')}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-            {partners.map((partner, index) => (
+            {partnersData.map((partner, index) => (
               <motion.div
                 key={partner.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -75,13 +78,13 @@ export default function Partners() {
         {/* Clients Section */}
         <div>
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
-            Khách hàng
+            {t('partners.clientsTitle')}
           </h2>
           <p className="text-gray-600 text-center mb-12">
-            Fitfood tự hào là lựa chọn ưu tiên hàng đầu của các doanh nghiệp lớn trong và ngoài nước
+            {t('partners.clientsSubtitle')}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
-            {clients.map((client, index) => (
+            {clientsData.map((client, index) => (
               <motion.div
                 key={client.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -103,10 +106,10 @@ export default function Partners() {
           </div>
           <div className="text-center mt-8">
             <p className="text-gray-600 mb-4">
-              (Click vào logo để xem hình ảnh thực tế sự kiện)
+              {t('partners.clickLogo')}
             </p>
             <p className="text-gray-600">
-              Liên hệ <a href="mailto:business@fitfood.vn" className="text-green-600 hover:text-green-700">business@fitfood.vn</a> để đặt tiệc ngay
+              {t('partners.contactText')} <a href="mailto:business@fitfood.vn" className="text-green-600 hover:text-green-700">business@fitfood.vn</a> {t('partners.contactText2')}
             </p>
           </div>
         </div>

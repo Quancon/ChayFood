@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  i18n: {
+    locales: ['en', 'vi'],
+    defaultLocale: 'vi',
+  },
   images: {
     domains: [
       'images.unsplash.com',

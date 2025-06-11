@@ -3,11 +3,11 @@
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { useCart } from "@/hooks/useCart"
+import { useCart } from "@/[lng]/hooks/useCart"
 import { MenuItem } from "@/lib/services/types"
 import { cn } from "@/lib/utils"
 import { ShoppingCart, Eye } from "lucide-react"
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../[lng]/context/AuthContext"
 import React, { useState } from "react"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
@@ -15,9 +15,10 @@ import Link from "next/link"
 interface MenuItemCardProps {
   item: MenuItem
   className?: string
+  lng: string
 }
 
-export function MenuItemCard({ item, className }: MenuItemCardProps) {
+export function MenuItemCard({ item, className, lng }: MenuItemCardProps) {
   const { addToCartWithMessage, isItemInCart, getItemQuantity } = useCart()
   const { isAuthenticated } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
@@ -73,7 +74,7 @@ export function MenuItemCard({ item, className }: MenuItemCardProps) {
           </span>
         )}
         <div className="absolute inset-0 bg-black/30 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-          <Link href={`/menu/${item._id}`} passHref>
+          <Link href={`/${lng}/menu/${item._id}`} passHref>
             <Button
               variant="ghost"
               size="icon"

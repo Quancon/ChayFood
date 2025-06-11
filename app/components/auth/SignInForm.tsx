@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '@/[lng]/context/AuthContext'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from 'react-i18next';
 
 type FormValues = {
   email: string;
@@ -12,10 +13,12 @@ type FormValues = {
 
 interface SignInFormProps {
   onSuccess?: () => void;
+  lng: string;
 }
 
-export default function SignInForm({ onSuccess }: SignInFormProps) {
+export default function SignInForm({ onSuccess, lng }: SignInFormProps) {
   const router = useRouter()
+  const { t } = useTranslation();
   const { login, isAuthenticated } = useAuth()
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -31,11 +34,11 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const redirectPath = localStorage.getItem('redirectAfterAuth') || '/'
+      const redirectPath = localStorage.getItem('redirectAfterAuth') || `/${lng}/`
       localStorage.removeItem('redirectAfterAuth')
       router.push(redirectPath)
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, router, lng])
 
   async function onSubmit(values: FormValues) {
     setError('')
@@ -46,15 +49,15 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
       
       if (user) {
         if (onSuccess) onSuccess();
-        const redirectPath = localStorage.getItem('redirectAfterAuth') || '/'
+        const redirectPath = localStorage.getItem('redirectAfterAuth') || `/${lng}/`
         localStorage.removeItem('redirectAfterAuth')
         router.push(redirectPath)
       } else {
-        setError('Invalid email or password. Please try again.')
+        setError(t('signInForm.invalidCredentials'))
       }
     } catch (err) {
       console.error('Login error:', err)
-      setError('An error occurred during login. Please try again.')
+      setError(t('signInForm.loginError'))
     } finally {
       setIsLoading(false)
     }
@@ -74,7 +77,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
       window.location.href = `${apiUrl}/auth/${provider.toLowerCase()}`
     } catch (err) {
       console.error(`${provider} login error:`, err)
-      setError(`An error occurred during ${provider} login. Please try again.`)
+      setError(t('signInForm.oauthLoginError', { provider }))
       setOauthLoading(null)
     }
   }
@@ -96,13 +99,13 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email
+            {t('signInForm.emailLabel')}
           </label>
           <input
             id="email"
             type="email"
             className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            placeholder="you@example.com"
+            placeholder={t('signInForm.emailPlaceholder')}
             {...form.register('email', { required: true })}
           />
         </div>
@@ -110,14 +113,14 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
         <div>
           <div className="flex justify-between items-center mb-1">
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
+              {t('signInForm.passwordLabel')}
             </label>
             <button
               type="button"
               onClick={switchToForgotPassword}
               className="text-sm text-green-600 hover:text-green-700"
             >
-              Quên mật khẩu?
+              {t('signInForm.forgotPassword')}
             </button>
           </div>
           <input
@@ -140,10 +143,10 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Signing in...
+              {t('signInForm.signingIn')}
             </span>
           ) : (
-            'Sign In'
+            t('signInForm.signInButton')
           )}
         </button>
       </form>
@@ -153,7 +156,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
           <span className="w-full border-t"></span>
         </div>
         <span className="relative bg-white px-3 text-sm text-gray-500">
-          Or continue with
+          {t('signInForm.orContinueWith')}
         </span>
       </div>
       
@@ -170,7 +173,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Connecting to Google...
+              {t('signInForm.connectingToGoogle')}
             </span>
           ) : (
             <>
@@ -182,7 +185,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
                   <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
                 </g>
               </svg>
-              Sign in with Google
+              {t('signInForm.signInWithGoogle')}
             </>
           )}
         </button>
@@ -199,14 +202,14 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Connecting to Facebook...
+              {t('signInForm.connectingToFacebook')}
             </span>
           ) : (
             <>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
-              Sign in with Facebook
+              {t('signInForm.signInWithFacebook')}
             </>
           )}
         </button>
@@ -214,7 +217,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
       
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
-          Don&apos;t have an account?{' '}
+          {t('signInForm.noAccount')}{' '}
           <button
             onClick={() => {
               const event = new CustomEvent('switchAuthView', { detail: 'signup' });
@@ -222,7 +225,7 @@ export default function SignInForm({ onSuccess }: SignInFormProps) {
             }}
             className="text-green-600 hover:text-green-700 font-medium"
           >
-            Sign Up
+            {t('signInForm.signUp')}
           </button>
         </p>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../[lng]/context/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,30 +16,34 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Alert, AlertDescription } from '../../components/ui/alert';
+import { Alert, AlertDescription } from '../ui/alert';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-const formSchema = z
-  .object({
-    password: z.string().min(6, 'Mật khẩu phải có ít nhất 6 ký tự'),
-    confirmPassword: z.string().min(6, 'Mật khẩu xác nhận phải có ít nhất 6 ký tự'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Mật khẩu xác nhận không khớp',
-    path: ['confirmPassword'],
-  });
+import { useTranslation } from 'react-i18next';
 
 interface ResetPasswordFormProps {
   onClose?: () => void;
   onSuccess?: () => void;
   tokenFromProps?: string;
+  lng: string;
 }
 
 export default function ResetPasswordForm({
   onClose,
   onSuccess,
   tokenFromProps,
+  lng,
 }: ResetPasswordFormProps) {
+  const { t } = useTranslation();
+  const formSchema = z
+    .object({
+      password: z.string().min(6, t('resetPasswordForm.passwordMinLength')),
+      confirmPassword: z.string().min(6, t('resetPasswordForm.confirmPasswordMinLength')),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t('resetPasswordForm.passwordMismatch'),
+      path: ['confirmPassword'],
+    });
+  
   const { resetPassword } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +65,7 @@ export default function ResetPasswordForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!resetToken) {
-      setError('Mã xác thực không hợp lệ. Vui lòng kiểm tra liên kết trong email.');
+      setError(t('resetPasswordForm.invalidToken'));
       return;
     }
 
@@ -79,14 +83,14 @@ export default function ResetPasswordForm({
           if (onSuccess) {
             onSuccess();
           } else {
-            router.push('/');
+            router.push(`/${lng}/`);
           }
         }, 3000);
       } else {
         setError(result.message);
       }
     } catch {
-      setError('Đã xảy ra lỗi. Vui lòng thử lại sau.');
+      setError(t('resetPasswordForm.genericError'));
     } finally {
       setIsLoading(false);
     }
@@ -98,11 +102,11 @@ export default function ResetPasswordForm({
       <div className="p-6 space-y-4">
         <Alert variant="destructive">
           <AlertDescription>
-            Mã xác thực không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu lại.
+            {t('resetPasswordForm.tokenExpired')}
           </AlertDescription>
         </Alert>
-        <Button className="w-full" onClick={() => router.push('/')}>
-          Quay lại trang chủ
+        <Button className="w-full" onClick={() => router.push(`/${lng}/`)}>
+          {t('resetPasswordForm.returnToHome')}
         </Button>
       </div>
     );
@@ -111,7 +115,7 @@ export default function ResetPasswordForm({
   return (
     <div className="p-6 space-y-4">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Đặt lại mật khẩu</h2>
+        <h2 className="text-2xl font-bold">{t('resetPasswordForm.title')}</h2>
         {onClose && (
           <Button variant="ghost" size="icon" onClick={onClose}>
             <XCircle className="h-5 w-5" />
@@ -138,12 +142,12 @@ export default function ResetPasswordForm({
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Mật khẩu mới</FormLabel>
+                <FormLabel>{t('resetPasswordForm.newPassword')}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="Nhập mật khẩu mới"
+                      placeholder={t('resetPasswordForm.newPasswordPlaceholder')}
                       {...field}
                       disabled={isLoading}
                     />
@@ -170,12 +174,12 @@ export default function ResetPasswordForm({
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Xác nhận mật khẩu</FormLabel>
+                <FormLabel>{t('resetPasswordForm.confirmPassword')}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Input
                       type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Xác nhận mật khẩu mới"
+                      placeholder={t('resetPasswordForm.confirmPasswordPlaceholder')}
                       {...field}
                       disabled={isLoading}
                     />
@@ -200,10 +204,10 @@ export default function ResetPasswordForm({
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Đang xử lý...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t('resetPasswordForm.processing')}
               </>
             ) : (
-              'Đặt lại mật khẩu'
+              t('resetPasswordForm.resetButton')
             )}
           </Button>
         </form>

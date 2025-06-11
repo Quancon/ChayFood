@@ -5,19 +5,22 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserIcon } from '@heroicons/react/24/outline'
-import { useCart } from '../hooks/useCart'
-import { useAuth } from '../context/AuthContext'
+import { useCart } from '../[lng]/hooks/useCart'
+import { useAuth } from '../[lng]/context/AuthContext'
 import MobileNav from './MobileNav'
 import AuthModal from './auth/AuthModal'
+import LanguageChanger from './LanguageChanger'
+import { useTranslation } from 'react-i18next'
 
-const navLinks = [
-  { href: '/', label: 'Trang chủ' },
-  { href: '/menu', label: 'Thực đơn' },
-  { href: '/subscriptions', label: 'Đăng ký gói' },
-  { href: '/about', label: 'Giới thiệu' },
-]
+export default function Navbar({ lng }: { lng: string }) {
+  const { t } = useTranslation()
+  const navLinks = [
+    { href: `/${lng}`, label: t('nav.home') },
+    { href: `/${lng}/menu`, label: t('nav.menu') },
+    { href: `/${lng}/subscriptions`, label: t('nav.subscriptions') },
+    { href: `/${lng}/about`, label: t('nav.about') },
+  ]
 
-export default function Navbar() {
   const pathname = usePathname()
   const { user, isAuthenticated, logout, isLoading, refreshAuthState } = useAuth()
   const [scrolled, setScrolled] = useState(false)
@@ -87,6 +90,14 @@ export default function Navbar() {
     setAuthModalView('signup')
     setShowAuthModal(true)
   }
+
+  // Check if current path is active considering lng parameter
+  const isActivePath = (href: string) => {
+    if (href === `/${lng}` && pathname === `/${lng}`) {
+      return true;
+    }
+    return pathname?.startsWith(href);
+  };
   
   return (
     <>
@@ -98,7 +109,7 @@ export default function Navbar() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
-            <Link href="/" className="flex items-center">
+            <Link href={`/${lng}`} className="flex items-center">
               <span className="text-xl font-bold text-green-600">ChayFood</span>
             </Link>
             
@@ -109,7 +120,7 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`transition-colors ${
-                    pathname === link.href
+                    isActivePath(link.href)
                       ? 'text-green-600 font-medium'
                       : 'text-gray-700 hover:text-green-600'
                   }`}
@@ -121,9 +132,12 @@ export default function Navbar() {
             
             {/* Right side buttons - desktop */}
             <div className="hidden md:flex items-center space-x-4">
+              {/* Language Changer */}
+              <LanguageChanger />
+
               {/* Cart button */}
               <Link
-                href="/cart"
+                href={`/${lng}/cart`}
                 className="relative p-2 text-gray-700 hover:text-green-600 transition-colors"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -151,7 +165,7 @@ export default function Navbar() {
                     className="flex items-center text-gray-700 hover:text-green-600"
                   >
                     <UserIcon className="h-6 w-6" />
-                    <span className="ml-2">{user?.name?.split(' ')[0] || 'Account'}</span>
+                    <span className="ml-2">{user?.name?.split(' ')[0] || t('nav.account')}</span>
                   </button>
                   
                   {/* Dropdown menu */}
@@ -166,25 +180,25 @@ export default function Navbar() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Link
-                          href="/account/profile"
+                          href={`/${lng}/account/profile`}
                           className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          Profile
+                          {t('nav.profile')}
                         </Link>
                         <Link
-                          href="/account/orders"
+                          href={`/${lng}/account/orders`}
                           className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          My Orders
+                          {t('nav.myOrders')}
                         </Link>
                         <Link
-                          href="/account/subscriptions"
+                          href={`/${lng}/account/subscriptions`}
                           className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          My Subscriptions
+                          {t('nav.mySubscriptions')}
                         </Link>
                         <div className="border-t border-gray-100 my-1"></div>
                         <button
@@ -194,7 +208,7 @@ export default function Navbar() {
                           }}
                           className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                         >
-                          Logout
+                          {t('nav.logout')}
                         </button>
                       </motion.div>
                     )}
@@ -206,13 +220,13 @@ export default function Navbar() {
                     onClick={openSignIn}
                     className="text-gray-700 hover:text-green-600 transition-colors"
                   >
-                    Sign In
+                    {t('nav.signIn')}
                   </button>
                   <button
                     onClick={openSignUp}
                     className="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md transition-colors"
                   >
-                    Sign Up
+                    {t('nav.signUp')}
                   </button>
                 </div>
               )}
@@ -221,6 +235,7 @@ export default function Navbar() {
             {/* Hamburger Menu - Mobile */}
             <div className="md:hidden">
               <MobileNav 
+                lng={lng}
                 isAuthenticated={isAuthenticated}
                 user={user}
                 cartItemCount={totalItems}
