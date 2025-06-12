@@ -5,16 +5,32 @@ import { useRouter, useParams } from 'next/navigation';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../../lib/services';
-import { CreateOrderDto, MenuItem as BackendMenuItem } from '../../lib/services/types';
+import { CreateOrderDto } from '../../lib/services/types';
+import { CartItem } from '../../lib/actions/cartActions';
 import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 
 // Helper lấy đúng trường string cho name/description
-const getMenuItemName = (menuItem: BackendMenuItem, lng: string, fallback = '') => {
-  if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
-    return (menuItem.name as Record<string, string>)[lng] || (menuItem.name as Record<string, string>).en || fallback;
+const getMenuItemName = (menuItem: CartItem['menuItem'], lng: string, fallback = '') => {
+  if (!menuItem) return fallback;
+
+  let nameToProcess: string | Record<string, string> | undefined;
+
+  if (typeof menuItem === 'object' && 'name' in menuItem) {
+    nameToProcess = menuItem.name;
+  } else if (typeof menuItem === 'string') {
+    // If it's just an ID, return it directly for now or fetch it if needed.
+    return menuItem; // Return the ID as a fallback for display
   }
-  return (menuItem?.name as string) || fallback;
+
+  if (nameToProcess) {
+    if (typeof nameToProcess === 'object') {
+      return nameToProcess[lng] || nameToProcess.en || fallback;
+    } else {
+      return nameToProcess;
+    }
+  }
+  return fallback;
 };
 export default function OrderPage() {
   const params = useParams();
@@ -68,9 +84,9 @@ export default function OrderPage() {
       // Create order payload
       const orderData: CreateOrderDto = {
         items: items.map(item => ({
-          menuItem: item.menuItem._id,
+          menuItem: typeof item.menuItem === 'object' ? item.menuItem._id : item.menuItem,
           quantity: item.quantity,
-          price: item.menuItem.price,
+          price: typeof item.menuItem === 'object' ? item.menuItem.price : 0,
           specialInstructions: item.specialInstructions
         })),
         totalAmount,
@@ -296,11 +312,11 @@ export default function OrderPage() {
             <h2 className="text-xl font-semibold mb-4">{t('orderPage.orderSummaryTitle')}</h2>
             <div className="space-y-3 mb-4">
               {items.map(item => (
-                <div key={item.menuItem._id} className="flex items-center justify-between">
+                <div key={typeof item.menuItem === 'object' ? item.menuItem._id : item.menuItem} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden">
                       <Image
-                        src={item.menuItem.image || '/assets/placeholder.jpg'}
+                        src={typeof item.menuItem === 'object' ? item.menuItem.image || '/assets/placeholder.jpg' : '/assets/placeholder.jpg'}
                         alt={getMenuItemName(item.menuItem, lng)}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -309,13 +325,13 @@ export default function OrderPage() {
                     </div>
                     <div>
                       <p className="font-medium text-gray-800">{getMenuItemName(item.menuItem, lng)}</p>
-                      <p className="text-sm text-gray-600">{item.quantity} x {item.menuItem.price.toLocaleString('vi-VN')} VND</p>
+                      <p className="text-sm text-gray-600">{item.quantity} x {(typeof item.menuItem === 'object' ? item.menuItem.price : 0).toLocaleString('vi-VN')} VND</p>
                       {item.specialInstructions && (
                         <p className="text-xs text-gray-500 italic">{item.specialInstructions}</p>
                       )}
                     </div>
                   </div>
-                  <p className="font-semibold">{(item.quantity * item.menuItem.price).toLocaleString('vi-VN')} VND</p>
+                  <p className="font-semibold">{(item.quantity * (typeof item.menuItem === 'object' ? item.menuItem.price : 0)).toLocaleString('vi-VN')} VND</p>
                 </div>
               ))}
             </div>

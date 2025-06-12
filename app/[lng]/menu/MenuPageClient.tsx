@@ -12,6 +12,15 @@ import { MenuItemCard } from "@/components/ui/menu-item-card"
 import { categoryService, Category } from '../services/categoryService';
 import { useTranslation } from 'react-i18next';
 
+// Helper to get localized name/description from MenuItem
+const getLocalizedField = (field: string | Record<string, string> | undefined, lng: string, fallback = '') => {
+  if (!field) return fallback;
+  if (typeof field === 'object') {
+    return field[lng] || field.en || fallback;
+  }
+  return field;
+};
+
 interface MenuResponse {
   data: MenuItem[] | { data?: MenuItem[], items?: MenuItem[] };
   status: number;
@@ -155,9 +164,12 @@ export default function MenuPageClient({ lng }: MenuPageClientProps) {
       // Search query filter
       if (debouncedSearchQuery) {
         const searchLower = debouncedSearchQuery.toLowerCase();
+        const itemName = getLocalizedField(item.name, lng, '');
+        const itemDescription = getLocalizedField(item.description, lng, '');
+
         const matchesSearch = 
-          item.name.toLowerCase().includes(searchLower) ||
-          (item.description && item.description.toLowerCase().includes(searchLower)) ||
+          itemName.toLowerCase().includes(searchLower) ||
+          (itemDescription && itemDescription.toLowerCase().includes(searchLower)) ||
           (typeof item.category === 'string' && item.category.toLowerCase().includes(searchLower));
         if (!matchesSearch) {
           // console.log(`Item ${item.name} filtered out by search query`);
@@ -245,7 +257,7 @@ export default function MenuPageClient({ lng }: MenuPageClientProps) {
     });
     
     return filtered;
-  }, [data, category, debouncedSearchQuery, spicyLevel, priceRange, nutritionRange, excludedIngredients]);
+  }, [data, category, debouncedSearchQuery, spicyLevel, priceRange, nutritionRange, excludedIngredients, lng]);
 
   const handleAddIngredient = () => {
     if (ingredientInput.trim() !== '') {

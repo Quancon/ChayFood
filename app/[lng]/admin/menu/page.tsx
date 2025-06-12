@@ -114,11 +114,11 @@ export default function MenuPage() {
   const handleEditMenuItem = (item: MenuItem) => {
     setEditingMenuItem(item)
     setMenuItemFormData({
-      name: item.name,
+      name: typeof item.name === 'string' ? item.name : '',
       category: typeof item.category === 'string' ? item.category : (item.category as { _id?: string })?._id || '',
       price: item.price,
-      description: item.description,
-      image: item.image,
+      description: typeof item.description === 'string' ? item.description : '',
+      image: typeof item.image === 'string' ? item.image : '',
       isAvailable: item.isAvailable
     })
     setShowAddForm(true)
@@ -415,8 +415,8 @@ export default function MenuPage() {
           <div key={item._id} className="bg-white rounded-lg shadow overflow-hidden">
             <div className="aspect-w-16 aspect-h-9 bg-gray-200">
               <Image
-                src={item.image}
-                alt={item.name}
+                src={typeof item.image === 'string' ? item.image : ''}
+                alt={typeof item.name === 'string' ? item.name : ''}
                 width={640}
                 height={360}
                 className="w-full h-48 object-cover"
@@ -424,10 +424,10 @@ export default function MenuPage() {
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg">{item.name}</h3>
+                <h3 className="font-semibold text-lg">{typeof item.name === 'string' ? item.name : ''}</h3>
                 <span className="font-medium text-green-600">${item.price.toFixed(2)}</span>
               </div>
-              <p className="text-gray-600 text-sm mb-4">{item.description}</p>
+              <p className="text-gray-600 text-sm mb-4">{typeof item.description === 'string' ? item.description : ''}</p>
               <div className="flex items-center justify-between">
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
