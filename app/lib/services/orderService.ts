@@ -1,5 +1,6 @@
 import api from './apiClient';
 import type { CreateOrderDto, Order } from './types';
+import { menuService } from './menuService';
 
 export const orderService = {
   // Get all orders (admin) or user's orders (legacy route)

@@ -28,6 +28,20 @@ interface CheckoutPageClientProps {
   lng: string;
 }
 
+// Helper lấy đúng trường string cho name/description
+const getMenuItemName = (menuItem: any, lng: string, fallback = '') => {
+  if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
+    return menuItem.name[lng] || menuItem.name.en || fallback;
+  }
+  return menuItem?.name || fallback;
+};
+const getMenuItemDescription = (menuItem: any, lng: string, fallback = '') => {
+  if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
+    return menuItem.description[lng] || menuItem.description.en || fallback;
+  }
+  return menuItem?.description || fallback;
+};
+
 export default function CheckoutPageClient({ lng }: CheckoutPageClientProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -408,7 +422,7 @@ export default function CheckoutPageClient({ lng }: CheckoutPageClientProps) {
                 <div key={item._id} className="py-3 flex justify-between">
                   <div>
                     <span className="font-medium">{item.quantity}x </span>
-                    {item.menuItem.name}
+                    {getMenuItemName(item.menuItem, lng)}
                   </div>
                   <div className="font-medium">
                     {new Intl.NumberFormat(lng === 'vi' ? 'vi-VN' : 'en-US', { style: 'currency', currency: 'VND' }).format(item.menuItem.price * item.quantity)}

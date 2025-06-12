@@ -9,6 +9,20 @@ import { CreateOrderDto } from '../../lib/services/types';
 import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 
+// Helper lấy đúng trường string cho name/description
+const getMenuItemName = (menuItem: any, lng: string, fallback = '') => {
+  if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
+    return menuItem.name[lng] || menuItem.name.en || fallback;
+  }
+  return menuItem?.name || fallback;
+};
+const getMenuItemDescription = (menuItem: any, lng: string, fallback = '') => {
+  if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
+    return menuItem.description[lng] || menuItem.description.en || fallback;
+  }
+  return menuItem?.description || fallback;
+};
+
 export default function OrderPage() {
   const params = useParams();
   const { lng } = params as { lng: string };
@@ -294,14 +308,14 @@ export default function OrderPage() {
                     <div className="relative w-16 h-16 rounded-md overflow-hidden">
                       <Image
                         src={item.menuItem.image || '/assets/placeholder.jpg'}
-                        alt={item.menuItem.name}
+                        alt={getMenuItemName(item.menuItem, lng)}
                         fill
                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         style={{ objectFit: 'cover' }}
                       />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-800">{item.menuItem.name}</p>
+                      <p className="font-medium text-gray-800">{getMenuItemName(item.menuItem, lng)}</p>
                       <p className="text-sm text-gray-600">{item.quantity} x {item.menuItem.price.toLocaleString('vi-VN')} VND</p>
                       {item.specialInstructions && (
                         <p className="text-xs text-gray-500 italic">{item.specialInstructions}</p>
