@@ -16,6 +16,7 @@ import { useAuth } from "@/[lng]/context/AuthContext"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
 import { getReviewsByMenuItem, Review, createReview } from "@/[lng]/services/reviewService"
+import { useTranslation } from "../../../i18n/client"
 
 export default function MenuItemDetail() {
   const params = useParams()
@@ -26,6 +27,7 @@ export default function MenuItemDetail() {
   const [quantity, setQuantity] = useState(1)
   const { addToCartWithMessage, isItemInCart, getItemQuantity } = useCart()
   const { isAuthenticated } = useAuth()
+  const { t } = useTranslation(lng, "common")
 
   // State cho reviews
   const [reviews, setReviews] = useState<Review[]>([])
@@ -43,6 +45,14 @@ export default function MenuItemDetail() {
   const user = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null
   const userId = user?._id
   const hasReviewed = reviews.some(r => r.user._id === userId)
+
+  // Helper lấy đúng trường string cho name/description
+  const itemName = item && typeof item.name === 'object' && item.name !== null
+    ? (item.name as Record<string, string>)[lng] || (item.name as Record<string, string>).en || ''
+    : item?.name || '';
+  const itemDescription = item && typeof item.description === 'object' && item.description !== null
+    ? (item.description as Record<string, string>)[lng] || (item.description as Record<string, string>).en || ''
+    : item?.description || '';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,7 +76,7 @@ export default function MenuItemDetail() {
           }
         }
       } catch {
-        toast.error("Không thể tải thông tin món ăn")
+        toast.error(t("menuItemDetail.loadError"))
       } finally {
         setLoading(false)
       }
@@ -100,15 +110,15 @@ export default function MenuItemDetail() {
     if (!item) return
     
     if (!isAuthenticated) {
-      toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng")
+      toast.error(t("menuItemDetail.loginPrompt"))
       return
     }
     
     try {
       await addToCartWithMessage(item, quantity)
-      toast.success(`Đã thêm ${quantity} ${item.name} vào giỏ hàng`)
+      toast.success(`${t("menuItemDetail.addedToCart", { count: quantity, itemName: (item.name as any)[lng] || item.name })}`)
     } catch {
-      toast.error("Không thể thêm vào giỏ hàng")
+      toast.error(t("menuItemDetail.addFail"))
     }
   }
 
@@ -119,18 +129,18 @@ export default function MenuItemDetail() {
     e.preventDefault()
     if (!item) return
     if (!isAuthenticated) {
-      toast.error("Vui lòng đăng nhập để đánh giá")
+      toast.error(t("menuItemDetail.reviewLoginPrompt"))
       return
     }
     if (reviewRating === 0) {
-      setReviewError("Vui lòng chọn đánh giá")
+      setReviewError(t("menuItemDetail.ratingRequired"))
       return
     }
     setSubmittingReview(true)
     try {
       const token = localStorage.getItem("authToken")
       if (!token) {
-        setReviewError("Bạn cần đăng nhập để đánh giá.")
+        setReviewError(t("menuItemDetail.reviewLoginRequired"))
         setSubmittingReview(false)
         return
       }
@@ -140,12 +150,12 @@ export default function MenuItemDetail() {
         setReviewRating(5)
         setReviewComment("")
         setReviewError("")
-        toast.success("Đánh giá đã được gửi thành công")
+        toast.success(t("menuItemDetail.reviewSuccess"))
       } else {
-        setReviewError("Không thể gửi đánh giá hoặc bạn đã đánh giá món này rồi.")
+        setReviewError(t("menuItemDetail.reviewFailOrExists"))
       }
     } catch {
-      toast.error("Không thể gửi đánh giá")
+      toast.error(t("menuItemDetail.reviewSubmitError"))
     } finally {
       setSubmittingReview(false)
     }
@@ -159,12 +169,12 @@ export default function MenuItemDetail() {
     return (
       <div className="container mx-auto py-12 px-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Không tìm thấy món ăn</h1>
-          <p className="mb-6">Món ăn này có thể đã bị xóa hoặc không tồn tại.</p>
+          <h1 className="text-2xl font-bold mb-4">{t("menuItemDetail.notFound")}</h1>
+          <p className="mb-6">{t("menuItemDetail.notFoundDescription")}</p>
           <Link href={`/${lng}/menu`} passHref>
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lại menu
+              {t("menuItemDetail.backToMenu")}
             </Button>
           </Link>
         </div>
@@ -179,7 +189,7 @@ export default function MenuItemDetail() {
         <Link href={`/${lng}/menu`} passHref>
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Quay lại menu
+            {t("menuItemDetail.backToMenu")}
           </Button>
         </Link>
       </div>
@@ -190,7 +200,7 @@ export default function MenuItemDetail() {
         <div className="relative h-[300px] md:h-[400px] w-full rounded-lg overflow-hidden">
           <Image
             src={item.image || "https://placekitten.com/400/400"}
-            alt={item.name}
+            alt={itemName}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
@@ -200,7 +210,7 @@ export default function MenuItemDetail() {
         {/* Thông tin chi tiết */}
         <div className="flex flex-col">
           <div className="mb-4">
-            <h1 className="text-3xl font-bold mb-2">{item.name}</h1>
+            <h1 className="text-3xl font-bold mb-2">{itemName}</h1>
             <div className="flex items-center mb-4">
               <div className="flex items-center mr-4">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -212,37 +222,34 @@ export default function MenuItemDetail() {
                   />
                 ))}
                 <span className="ml-2 text-sm text-gray-600">
-                  ({totalReviews} đánh giá)
+                  ({totalReviews} {t("menuItemDetail.reviews")})
                 </span>
               </div>
               <Badge variant="outline" className="ml-auto">
-                {item.category === "main" && "Món chính"}
-                {item.category === "side" && "Món phụ"}
-                {item.category === "dessert" && "Tráng miệng"}
-                {item.category === "beverage" && "Đồ uống"}
+                {t(`categories.${item.category}`)}
               </Badge>
             </div>
-            <p className="text-2xl font-bold text-primary mb-4">{item.price} VNĐ</p>
-            <p className="text-gray-700 mb-6">{item.description}</p>
+            <p className="text-2xl font-bold text-primary mb-4">{item.price.toLocaleString()} VNĐ</p>
+            <p className="text-gray-700 mb-6">{itemDescription}</p>
           </div>
 
           {/* Thông tin bổ sung */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="flex items-center">
               <Clock className="h-5 w-5 text-gray-500 mr-2" />
-              <span>Thời gian chuẩn bị: {item.preparationTime} phút</span>
+              <span>{t("menuItemDetail.prepTime", { time: item.preparationTime })}</span>
             </div>
             <div className="flex items-center">
               <Info className="h-5 w-5 text-gray-500 mr-2" />
               <span>
-                {item.isVegetarian ? "Món chay" : "Không phải món chay"}
+                {item.isVegetarian ? t("menuItemDetail.vegetarian") : t("menuItemDetail.notVegetarian")}
               </span>
             </div>
           </div>
 
           {/* Độ cay */}
           <div className="mb-6">
-            <p className="font-medium mb-2">Độ cay:</p>
+            <p className="font-medium mb-2">{t("menuItemDetail.spicyLevel")}:</p>
             <div className="flex items-center">
               {[0, 1, 2, 3].map((level) => (
                 <div
@@ -255,10 +262,10 @@ export default function MenuItemDetail() {
                 />
               ))}
               <span className="ml-2 text-sm text-gray-600">
-                {item.spicyLevel === 0 && "Không cay"}
-                {item.spicyLevel === 1 && "Cay nhẹ"}
-                {item.spicyLevel === 2 && "Cay vừa"}
-                {item.spicyLevel === 3 && "Rất cay"}
+                {item.spicyLevel === 0 && t("spicyLevels.0")}
+                {item.spicyLevel === 1 && t("spicyLevels.1")}
+                {item.spicyLevel === 2 && t("spicyLevels.2")}
+                {item.spicyLevel === 3 && t("spicyLevels.3")}
               </span>
             </div>
           </div>
@@ -266,7 +273,7 @@ export default function MenuItemDetail() {
           {/* Số lượng và nút thêm vào giỏ hàng */}
           <div className="mt-auto">
             <div className="flex items-center mb-4">
-              <p className="font-medium mr-4">Số lượng:</p>
+              <p className="font-medium mr-4">{t("menuItemDetail.quantity")}:</p>
               <div className="flex items-center border rounded">
                 <Button
                   type="button"
@@ -296,10 +303,10 @@ export default function MenuItemDetail() {
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
               {!item.isAvailable
-                ? "Hết hàng"
+                ? t("menuItemDetail.outOfStock")
                 : itemInCart
-                ? `Trong giỏ (${cartQuantity})`
-                : "Thêm vào giỏ hàng"}
+                ? `${t("menuItemDetail.inCart")} (${cartQuantity})`
+                : t("menuItemDetail.addToCart")}
             </Button>
           </div>
         </div>
@@ -308,34 +315,34 @@ export default function MenuItemDetail() {
       {/* Tabs cho thông tin dinh dưỡng, thành phần và đánh giá */}
       <Tabs defaultValue="nutrition" className="mb-12">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="nutrition">Thông tin dinh dưỡng</TabsTrigger>
-          <TabsTrigger value="ingredients">Thành phần</TabsTrigger>
-          <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
+          <TabsTrigger value="nutrition">{t("menuItemDetail.nutritionTab")}</TabsTrigger>
+          <TabsTrigger value="ingredients">{t("menuItemDetail.ingredientsTab")}</TabsTrigger>
+          <TabsTrigger value="reviews">{t("menuItemDetail.reviewsTab")}</TabsTrigger>
         </TabsList>
         
         {/* Tab thông tin dinh dưỡng */}
         <TabsContent value="nutrition" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Thông tin dinh dưỡng</CardTitle>
-              <CardDescription>Chi tiết dinh dưỡng cho mỗi khẩu phần</CardDescription>
+              <CardTitle>{t("menuItemDetail.nutritionInfo")}</CardTitle>
+              <CardDescription>{t("menuItemDetail.nutritionDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-primary/10 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Calo</p>
+                  <p className="text-sm text-gray-500">{t("nutrition.calories")}</p>
                   <p className="text-xl font-bold">{item.nutritionInfo.calories}</p>
                 </div>
                 <div className="bg-primary/10 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Protein</p>
+                  <p className="text-sm text-gray-500">{t("nutrition.protein")}</p>
                   <p className="text-xl font-bold">{item.nutritionInfo.protein}g</p>
                 </div>
                 <div className="bg-primary/10 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Carbs</p>
+                  <p className="text-sm text-gray-500">{t("nutrition.carbs")}</p>
                   <p className="text-xl font-bold">{item.nutritionInfo.carbs}g</p>
                 </div>
                 <div className="bg-primary/10 p-4 rounded-lg text-center">
-                  <p className="text-sm text-gray-500">Chất béo</p>
+                  <p className="text-sm text-gray-500">{t("nutrition.fat")}</p>
                   <p className="text-xl font-bold">{item.nutritionInfo.fat}g</p>
                 </div>
               </div>
@@ -347,12 +354,12 @@ export default function MenuItemDetail() {
         <TabsContent value="ingredients" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Thành phần</CardTitle>
-              <CardDescription>Danh sách thành phần và các chất gây dị ứng</CardDescription>
+              <CardTitle>{t("menuItemDetail.ingredients")}</CardTitle>
+              <CardDescription>{t("menuItemDetail.ingredientsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <h3 className="font-medium mb-2">Thành phần:</h3>
+                <h3 className="font-medium mb-2">{t("menuItemDetail.ingredients")}:</h3>
                 <div className="flex flex-wrap gap-2">
                   {item.ingredients.map((ingredient, index) => (
                     <Badge key={index} variant="secondary">
@@ -364,7 +371,7 @@ export default function MenuItemDetail() {
               
               {item.allergens && item.allergens.length > 0 && (
                 <div>
-                  <h3 className="font-medium mb-2">Chất gây dị ứng:</h3>
+                  <h3 className="font-medium mb-2">{t("menuItemDetail.allergens")}:</h3>
                   <div className="flex flex-wrap gap-2">
                     {item.allergens.map((allergen, index) => (
                       <Badge key={index} variant="destructive">
@@ -382,14 +389,14 @@ export default function MenuItemDetail() {
         <TabsContent value="reviews" className="pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Đánh giá từ khách hàng</CardTitle>
-              <CardDescription>Nhận xét về món ăn này</CardDescription>
+              <CardTitle>{t("menuItemDetail.customerReviews")}</CardTitle>
+              <CardDescription>{t("menuItemDetail.reviewsDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               {/* Form thêm đánh giá */}
               {isAuthenticated && !hasReviewed && (
                 <form onSubmit={handleSubmitReview} className="mb-8 p-4 border rounded-lg bg-muted">
-                  <div className="mb-2 font-medium">Đánh giá của bạn:</div>
+                  <div className="mb-2 font-medium">{t("menuItemDetail.yourReview")}:</div>
                   <div className="flex items-center mb-2">
                     {[1,2,3,4,5].map(star => (
                       <button
@@ -397,32 +404,32 @@ export default function MenuItemDetail() {
                         key={star}
                         onClick={() => setReviewRating(star)}
                         className={star <= reviewRating ? "text-yellow-400" : "text-gray-300"}
-                        aria-label={`Chọn ${star} sao`}
+                        aria-label={`${t("menuItemDetail.rate")} ${star} ${t("menuItemDetail.stars")}`}
                       >
                         <Star className="h-6 w-6" fill={star <= reviewRating ? "#facc15" : "none"} />
                       </button>
                     ))}
-                    <span className="ml-2 text-sm">{reviewRating} sao</span>
+                    <span className="ml-2 text-sm">{reviewRating} {t("menuItemDetail.stars")}</span>
                   </div>
                   <textarea
                     className="w-full border rounded p-2 mb-2"
                     rows={3}
-                    placeholder="Nhập nhận xét của bạn..."
+                    placeholder={t("menuItemDetail.reviewPlaceholder")}
                     value={reviewComment}
                     onChange={e => setReviewComment(e.target.value)}
                     disabled={submittingReview}
                   />
                   {reviewError && <div className="text-red-500 text-sm mb-2">{reviewError}</div>}
                   <Button type="submit" disabled={submittingReview}>
-                    {submittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                    {submittingReview ? t("menuItemDetail.submitting") : t("menuItemDetail.submitReview")}
                   </Button>
                 </form>
               )}
               {/* Danh sách đánh giá */}
               {loadingReviews ? (
-                <div>Đang tải đánh giá...</div>
+                <div>{t("menuItemDetail.loadingReviews")}</div>
               ) : reviews.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">Chưa có đánh giá nào cho món ăn này.</div>
+                <div className="text-center text-gray-500 py-8">{t("menuItemDetail.noReviews")}</div>
               ) : (
                 reviews.map((review) => (
                   <div key={review._id} className="mb-6 border-b pb-4 last:border-0">
@@ -468,7 +475,7 @@ export default function MenuItemDetail() {
               )}
               <div className="border-t pt-4 mt-4">
                 <p className="text-center text-sm text-gray-500">
-                  Hãy đặt món này và để lại đánh giá của bạn!
+                  {t("menuItemDetail.leaveReviewPrompt")}
                 </p>
               </div>
             </CardContent>
@@ -479,7 +486,7 @@ export default function MenuItemDetail() {
       {/* Các món tương tự */}
       {similarItems.length > 0 && (
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Các món tương tự</h2>
+          <h2 className="text-2xl font-bold mb-6">{t("menuItemDetail.similarItems")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {similarItems.map((similarItem) => (
               <Link key={similarItem._id} href={`/${lng}/menu/${similarItem._id}`} passHref>
@@ -487,17 +494,17 @@ export default function MenuItemDetail() {
                   <div className="relative h-[160px] w-full overflow-hidden rounded-t-lg">
                     <Image
                       src={similarItem.image || "https://placekitten.com/400/400"}
-                      alt={similarItem.name}
+                      alt={(similarItem.name as any)[lng] || similarItem.name}
                       fill
                       className="object-cover"
                     />
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold line-clamp-1">{similarItem.name}</h3>
+                    <h3 className="font-semibold line-clamp-1">{(similarItem.name as any)[lng] || similarItem.name}</h3>
                     <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-                      {similarItem.description}
+                      {(similarItem.description as any)[lng] || similarItem.description}
                     </p>
-                    <p className="font-bold text-primary mt-2">{similarItem.price} VNĐ</p>
+                    <p className="font-bold text-primary mt-2">{similarItem.price.toLocaleString()} VNĐ</p>
                   </CardContent>
                 </Card>
               </Link>

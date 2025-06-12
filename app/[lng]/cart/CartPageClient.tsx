@@ -51,6 +51,20 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
     }
   }, [items, refresh]);
 
+  // Helper lấy đúng trường string cho name/description
+  const getMenuItemName = (menuItem: any) => {
+    if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
+      return menuItem.name[lng] || menuItem.name.en || '';
+    }
+    return menuItem?.name || t('cart.item.nameDefault');
+  };
+  const getMenuItemDescription = (menuItem: any) => {
+    if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
+      return menuItem.description[lng] || menuItem.description.en || '';
+    }
+    return menuItem?.description || '';
+  };
+
   if (isCartEmpty || safeItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 mt-16 text-center">
@@ -101,7 +115,7 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
                   <div className="relative h-24 w-24 rounded overflow-hidden flex-shrink-0">
                     <Image
                       src={item.menuItem?.image || 'https://placekitten.com/200/200'}
-                      alt={item.menuItem?.name || t('cart.item.nameDefault')}
+                      alt={getMenuItemName(item.menuItem) || t('cart.item.nameDefault')}
                       fill
                       className="object-cover"
                     />
@@ -109,7 +123,7 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
                   <div className="flex-grow ml-4">
                     <div className="flex justify-between">
                       <h3 className="font-medium">
-                        {item.menuItem?.name || t('cart.item.nameDefault')}
+                        {getMenuItemName(item.menuItem)}
                       </h3>
                       <p className="font-semibold">
                         {formatCurrency((item.menuItem?.price || 0) * (item.quantity || 0))}

@@ -477,9 +477,7 @@ export default function MenuPageClient({ lng }: MenuPageClientProps) {
               animate="show"
             >
               {filteredMenuItems.map((item) => (
-                <Link key={item._id} href={`/${lng}/menu/${item._id}`}>
-                  <MenuItemCard item={item} lng={lng} />
-                </Link>
+                <MenuItemCard key={item._id} item={item} lng={lng} />
               ))}
             </motion.div>
           )}

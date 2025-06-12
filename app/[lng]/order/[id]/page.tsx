@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { CheckCircleIcon, XCircleIcon, TruckIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useTranslation } from 'react-i18next';
 import { TFunction } from 'i18next';
+import { menuService } from '../../../lib/services/menuService';
 
 // Type for Order Details
 interface OrderDetails {
@@ -129,6 +130,14 @@ interface OrderItem {
   };
 }
 
+function getMenuItemName(menuItemDetails: any, lng: string) {
+  if (!menuItemDetails) return '';
+  if (typeof menuItemDetails.name === 'object') {
+    return menuItemDetails.name[lng] || menuItemDetails.name.en || '';
+  }
+  return menuItemDetails.name || '';
+}
+
 export default function OrderDetailsPage() {
   const params = useParams();
   const { id, lng } = params as { id: string; lng: string };
@@ -149,24 +158,56 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (authLoading) return;
-      
       if (!isAuthenticated) {
         router.push(`/${lng}/login`);
         return;
       }
-      
       try {
         setLoading(true);
         const response = await orderService.getById(id);
         if (response && response.status === 'success' && response.data) {
-          console.log('Order details:', response.data);
-          console.log('Order status:', response.data.status);
-          setOrder(response.data);
+          let orderData = response.data;
+          // Hydrate menu item details
+          if (orderData.items && Array.isArray(orderData.items)) {
+            const hydratedItems = await Promise.all(
+              orderData.items.map(async (item: any) => {
+                // Nếu đã có name, image thì không cần gọi lại
+                if (item.menuItemDetails && item.menuItemDetails.name) return item;
+                if (typeof item.menuItem === 'object' && item.menuItem.name) {
+                  return {
+                    ...item,
+                    menuItemDetails: {
+                      name: item.menuItem.name,
+                      image: item.menuItem.image || null
+                    }
+                  };
+                }
+                const menuItemId = typeof item.menuItem === 'object' && item.menuItem._id
+                  ? item.menuItem._id
+                  : item.menuItem;
+                let menuItemDetails = null;
+                try {
+                  const menuRes = await menuService.getById(menuItemId);
+                  menuItemDetails = menuRes.data ? {
+                    name: menuRes.data.name,
+                    image: menuRes.data.image || null
+                  } : null;
+                } catch (e) {
+                  // Nếu lỗi, để null
+                }
+                return {
+                  ...item,
+                  menuItemDetails,
+                };
+              })
+            );
+            orderData.items = hydratedItems;
+          }
+          setOrder(orderData);
         } else {
           setError(t('orderDetails.loadError'));
         }
       } catch (err) {
-        console.error('Error fetching order details:', err);
         setError(t('orderDetails.fetchError'));
       } finally {
         setLoading(false);
@@ -331,26 +372,30 @@ export default function OrderDetailsPage() {
                 <div className="relative w-20 h-20 flex-shrink-0">
                   <Image
                     src={item.menuItemDetails?.image || '/meals/meal-placeholder.jpg'}
-                    alt={item.menuItemDetails?.name || 'Menu Item'}
+                    alt={getMenuItemName(item.menuItemDetails, lng) || t('orderDetails.unknownItem')}
                     fill
                     className="object-cover rounded-lg"
                   />
                 </div>
                 <div className="flex-grow">
-                  <p className="font-medium text-lg text-gray-800">{item.menuItemDetails?.name || t('orderDetails.unknownItem')}</p>
+                  <p className="font-medium text-lg text-gray-800">
+                    {getMenuItemName(item.menuItemDetails, lng) || t('orderDetails.unknownItem')}
+                  </p>
                   <p className="text-gray-600">{t('orderDetails.quantity')}: {item.quantity}</p>
                   {item.specialInstructions && (
                     <p className="text-gray-600 text-sm italic">{t('orderDetails.itemInstructions')}: {item.specialInstructions}</p>
                   )}
                 </div>
-                <p className="font-semibold text-lg text-green-700">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="font-semibold text-lg text-green-700">
+                  {new Intl.NumberFormat(lng, { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}
+                </p>
               </div>
             ))}
           </div>
         </div>
 
         <div className="flex justify-end items-center mb-8">
-          <p className="text-xl font-bold text-green-800">{t('orderDetails.totalAmount')}: ${(order.totalAmount + 3.99).toFixed(2)}</p>
+          <p className="text-xl font-bold text-green-800">{t('orderDetails.totalAmount')}: {new Intl.NumberFormat(lng, { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -49,7 +49,7 @@ export const cartService = {
   clearCart: async () => {
     const token = localStorage.getItem('authToken');
     const response = await apiClient.delete(
-      `/cart/cart`,
+      `/cart`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
     return response.data;

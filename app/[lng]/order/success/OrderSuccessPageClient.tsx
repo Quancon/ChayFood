@@ -11,6 +11,14 @@ import { useCart } from '../../hooks/useCart';
 import CartToast from '../../../components/cart-toast';
 import { useTranslation } from 'react-i18next';
 
+function getMenuItemName(menuItem: any, lng: string) {
+  if (!menuItem) return '';
+  if (typeof menuItem.name === 'object') {
+    return menuItem.name[lng] || menuItem.name.en || '';
+  }
+  return menuItem.name || '';
+}
+
 export default function OrderSuccessPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -141,7 +149,7 @@ export default function OrderSuccessPageClient() {
               <h3 className="text-md font-semibold mb-2">{t('orderSuccess.orderedItems')}</h3>
               {order.items.map((item, index) => (
                 <div key={index} className="flex justify-between">
-                  <span>{item.quantity}x {typeof item.menuItem === 'object' ? item.menuItem.name : t('orderSuccess.product')}</span>
+                  <span>{item.quantity}x {getMenuItemName(item.menuItem, lng) || t('orderSuccess.product')}</span>
                   <span>{new Intl.NumberFormat(lng, { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}</span>
                 </div>
               ))}
