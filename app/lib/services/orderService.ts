@@ -1,7 +1,5 @@
 import api from './apiClient';
 import type { CreateOrderDto, Order } from './types';
-import { menuService } from './menuService';
-
 export const orderService = {
   // Get all orders (admin) or user's orders (legacy route)
   getAll: async () => {
@@ -24,6 +22,12 @@ export const orderService = {
   // Get order by ID
   getById: async (id: string) => {
     const response = await api.get(`/order/${id}`);
+    return response.data;
+  },
+  
+  // Get order by Session ID (for payment success callbacks)
+  getBySessionId: async (sessionId: string) => {
+    const response = await api.get(`/order/session/${sessionId}`);
     return response.data;
   },
   

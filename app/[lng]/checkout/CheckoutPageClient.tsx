@@ -11,6 +11,7 @@ import { orderService } from '@/[lng]/services/orderService';
 import { paymentService } from '@/[lng]/services/paymentService';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
+import type { CartItem } from '../../lib/actions/cartActions';
 
 interface Address {
   _id: string;
@@ -28,18 +29,28 @@ interface CheckoutPageClientProps {
   lng: string;
 }
 
+
 // Helper lấy đúng trường string cho name/description
-const getMenuItemName = (menuItem: any, lng: string, fallback = '') => {
-  if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
-    return menuItem.name[lng] || menuItem.name.en || fallback;
+const getMenuItemName = (menuItem: CartItem['menuItem'], lng: string, fallback = '') => {
+  if (!menuItem) return fallback;
+
+  let nameToProcess: string | Record<string, string> | undefined;
+
+  if (typeof menuItem === 'object' && 'name' in menuItem) {
+    nameToProcess = menuItem.name;
+  } else if (typeof menuItem === 'string') {
+    // If it's just an ID, return it directly for now or fetch it if needed.
+    return menuItem; // Return the ID as a fallback for display
   }
-  return menuItem?.name || fallback;
-};
-const getMenuItemDescription = (menuItem: any, lng: string, fallback = '') => {
-  if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
-    return menuItem.description[lng] || menuItem.description.en || fallback;
+
+  if (nameToProcess) {
+    if (typeof nameToProcess === 'object') {
+      return nameToProcess[lng] || nameToProcess.en || fallback;
+    } else {
+      return nameToProcess;
+    }
   }
-  return menuItem?.description || fallback;
+  return fallback;
 };
 
 export default function CheckoutPageClient({ lng }: CheckoutPageClientProps) {

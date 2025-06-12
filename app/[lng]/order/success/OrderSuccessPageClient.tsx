@@ -11,10 +11,13 @@ import { useCart } from '../../hooks/useCart';
 import CartToast from '../../../components/cart-toast';
 import { useTranslation } from 'react-i18next';
 
-function getMenuItemName(menuItem: any, lng: string) {
+function getMenuItemName(menuItem: string | { _id: string; name: string | Record<string, string>; price: number; image?: string; }, lng: string) {
+  if (typeof menuItem === 'string') {
+    return menuItem; // If it's just the ID, return it as a fallback for display
+  }
   if (!menuItem) return '';
   if (typeof menuItem.name === 'object') {
-    return menuItem.name[lng] || menuItem.name.en || '';
+    return (menuItem.name as Record<string, string>)[lng] || (menuItem.name as Record<string, string>).en || '';
   }
   return menuItem.name || '';
 }

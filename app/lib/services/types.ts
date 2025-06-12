@@ -1,7 +1,7 @@
 export interface MenuItem {
   _id: string;
-  name: string;
-  description: string;
+  name: string | Record<string, string>;
+  description: string | Record<string, string>;
   price: number;
   category: 'main' | 'side' | 'dessert' | 'beverage';
   image: string;
@@ -21,7 +21,7 @@ export interface MenuItem {
 
 export interface Order {
   _id: string;
-  user: string;
+  user: string | { _id: string; name: string; email: string; };
   items: Array<{
     menuItem: string | MenuItem;
     quantity: number;

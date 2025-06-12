@@ -52,19 +52,29 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
   }, [items, refresh]);
 
   // Helper lấy đúng trường string cho name/description
-  const getMenuItemName = (menuItem: any) => {
-    if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
-      return menuItem.name[lng] || menuItem.name.en || '';
-    }
-    return menuItem?.name || t('cart.item.nameDefault');
-  };
-  const getMenuItemDescription = (menuItem: any) => {
-    if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
-      return menuItem.description[lng] || menuItem.description.en || '';
-    }
-    return menuItem?.description || '';
-  };
+  const getMenuItemName = (menuItem: CartItem['menuItem']): string => {
+    if (!menuItem) return '';
 
+    let nameToProcess: string | Record<string, string> | undefined;
+
+    if (typeof menuItem === 'object' && 'name' in menuItem) {
+      nameToProcess = menuItem.name;
+    } else if (typeof menuItem === 'string') {
+      // If it's just an ID, return it directly for now or fetch it if needed.
+      // For now, return it as is, assuming it's a valid displayable ID or will be handled upstream.
+      return menuItem;
+    }
+
+    if (nameToProcess) {
+      if (typeof nameToProcess === 'object') {
+        return nameToProcess[lng] || nameToProcess.en || '';
+      } else {
+        return nameToProcess;
+      }
+    }
+    return t('cart.item.nameDefault');
+  };
+  
   if (isCartEmpty || safeItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 mt-16 text-center">
@@ -111,10 +121,10 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
             
             <div className="divide-y">
               {safeItems.map((item) => (
-                <div key={item.menuItem && item.menuItem._id ? item.menuItem._id : `item-${Math.random()}`} className="p-4 flex">
+                <div key={item.menuItem && (typeof item.menuItem === 'object' ? item.menuItem._id : item.menuItem) ? (typeof item.menuItem === 'object' ? item.menuItem._id : item.menuItem) : `item-${Math.random()}`} className="p-4 flex">
                   <div className="relative h-24 w-24 rounded overflow-hidden flex-shrink-0">
                     <Image
-                      src={item.menuItem?.image || 'https://placekitten.com/200/200'}
+                      src={(typeof item.menuItem === 'object' ? item.menuItem?.image : undefined) || 'https://placekitten.com/200/200'}
                       alt={getMenuItemName(item.menuItem) || t('cart.item.nameDefault')}
                       fill
                       className="object-cover"
@@ -125,60 +135,57 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
                       <h3 className="font-medium">
                         {getMenuItemName(item.menuItem)}
                       </h3>
-                      <p className="font-semibold">
-                        {formatCurrency((item.menuItem?.price || 0) * (item.quantity || 0))}
+                      <p className="font-sm text-gray-500 mb-2">
+                        {formatCurrency((typeof item.menuItem === 'object' ? item.menuItem?.price : undefined) || 0)} {t('cart.item.pricePerItem')}
                       </p>
-                    </div>
-                    <p className="text-sm text-gray-500 mb-2">
-                      {formatCurrency(item.menuItem?.price || 0)} {t('cart.item.pricePerItem')}
-                    </p>
-                    
-                    {(item.specialInstructions || item.notes) && (
-                      <p className="text-xs text-gray-500 mb-2 italic">{t('cart.item.notes')} {item.specialInstructions || item.notes}</p>
-                    )}
-                    
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center border rounded-md">
+                      
+                      {(item.specialInstructions || item.notes) && (
+                        <p className="text-xs text-gray-500 mb-2 italic">{t('cart.item.notes')} {item.specialInstructions || item.notes}</p>
+                      )}
+                      
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center border rounded-md">
+                          <button
+                            onClick={() => {
+                              if (item._id) {
+                                decreaseQuantity(item._id);
+                              } else if (typeof item.menuItem === 'object' && item.menuItem?._id) {
+                                decreaseQuantity(item.menuItem._id);
+                              }
+                            }}
+                            className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                          >
+                            -
+                          </button>
+                          <span className="px-3 py-1">{item.quantity || 0}</span>
+                          <button
+                            onClick={() => {
+                              if (item._id) {
+                                increaseQuantity(item._id);
+                              }
+                              else if (typeof item.menuItem === 'object' && item.menuItem?._id) {
+                                increaseQuantity(item.menuItem._id);
+                              }
+                            }}
+                            className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                          >
+                            +
+                          </button>
+                        </div>
                         <button
                           onClick={() => {
                             if (item._id) {
-                              decreaseQuantity(item._id);
-                            } else if (item.menuItem?._id) {
-                              decreaseQuantity(item.menuItem._id);
+                              removeItem(item._id);
+                            }
+                            else if (typeof item.menuItem === 'object' && item.menuItem?._id) {
+                              removeItem(item.menuItem._id);
                             }
                           }}
-                          className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                          className="text-gray-500 hover:text-red-500"
                         >
-                          -
-                        </button>
-                        <span className="px-3 py-1">{item.quantity || 0}</span>
-                        <button
-                          onClick={() => {
-                            if (item._id) {
-                              increaseQuantity(item._id);
-                            }
-                            else if (item.menuItem?._id) {
-                              increaseQuantity(item.menuItem._id);
-                            }
-                          }}
-                          className="px-3 py-1 text-gray-600 hover:bg-gray-100"
-                        >
-                          +
+                          {t('cart.item.remove')}
                         </button>
                       </div>
-                      <button
-                        onClick={() => {
-                          if (item._id) {
-                            removeItem(item._id);
-                          }
-                          else if (item.menuItem?._id) {
-                            removeItem(item.menuItem._id);
-                          }
-                        }}
-                        className="text-gray-500 hover:text-red-500"
-                      >
-                        {t('cart.item.remove')}
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -207,9 +214,9 @@ export default function CartPageClient({ lng }: CartPageClientProps) {
             
             <button
               onClick={proceedToCheckout}
-              className="w-full bg-green-500 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-600 transition-colors"
+              className="w-full bg-green-500 text-white py-3 rounded-lg font-medium hover:bg-green-600 transition-colors"
             >
-              {t('cart.proceedToCheckout')}
+              {t('cart.checkout')}
             </button>
             
             <div className="mt-4 text-center">
