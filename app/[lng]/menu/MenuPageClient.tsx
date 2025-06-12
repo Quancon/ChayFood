@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { MenuItemCard } from "@/components/ui/menu-item-card"
 import { categoryService, Category } from '../services/categoryService';
 import { useTranslation } from 'react-i18next';
-import Link from 'next/link';
+
 interface MenuResponse {
   data: MenuItem[] | { data?: MenuItem[], items?: MenuItem[] };
   status: number;

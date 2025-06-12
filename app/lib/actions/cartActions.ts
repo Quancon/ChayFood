@@ -7,10 +7,10 @@ export interface CartItem {
   _id?: string;
   menuItem: MenuItem | {
     _id: string;
-    name: string;
+    name: string | Record<string, string>;
     price: number;
     image?: string;
-    description?: string;
+    description?: string | Record<string, string>;
   };
   quantity: number;
   specialInstructions?: string;

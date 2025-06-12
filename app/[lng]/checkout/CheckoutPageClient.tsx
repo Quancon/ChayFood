@@ -11,6 +11,7 @@ import { orderService } from '@/[lng]/services/orderService';
 import { paymentService } from '@/[lng]/services/paymentService';
 import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
+import type { MenuItem as BackendMenuItem } from '../../../lib/services/types';
 
 interface Address {
   _id: string;
@@ -29,17 +30,11 @@ interface CheckoutPageClientProps {
 }
 
 // Helper lấy đúng trường string cho name/description
-const getMenuItemName = (menuItem: any, lng: string, fallback = '') => {
+const getMenuItemName = (menuItem: BackendMenuItem, lng: string, fallback = '') => {
   if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
-    return menuItem.name[lng] || menuItem.name.en || fallback;
+    return (menuItem.name as Record<string, string>)[lng] || (menuItem.name as Record<string, string>).en || fallback;
   }
-  return menuItem?.name || fallback;
-};
-const getMenuItemDescription = (menuItem: any, lng: string, fallback = '') => {
-  if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
-    return menuItem.description[lng] || menuItem.description.en || fallback;
-  }
-  return menuItem?.description || fallback;
+  return (menuItem?.name as string) || fallback;
 };
 
 export default function CheckoutPageClient({ lng }: CheckoutPageClientProps) {

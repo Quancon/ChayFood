@@ -5,24 +5,17 @@ import { useRouter, useParams } from 'next/navigation';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../../lib/services';
-import { CreateOrderDto } from '../../lib/services/types';
+import { CreateOrderDto, MenuItem as BackendMenuItem } from '../../lib/services/types';
 import Image from 'next/image';
 import { useTranslation } from 'react-i18next';
 
 // Helper lấy đúng trường string cho name/description
-const getMenuItemName = (menuItem: any, lng: string, fallback = '') => {
+const getMenuItemName = (menuItem: BackendMenuItem, lng: string, fallback = '') => {
   if (menuItem && typeof menuItem.name === 'object' && menuItem.name !== null) {
-    return menuItem.name[lng] || menuItem.name.en || fallback;
+    return (menuItem.name as Record<string, string>)[lng] || (menuItem.name as Record<string, string>).en || fallback;
   }
-  return menuItem?.name || fallback;
+  return (menuItem?.name as string) || fallback;
 };
-const getMenuItemDescription = (menuItem: any, lng: string, fallback = '') => {
-  if (menuItem && typeof menuItem.description === 'object' && menuItem.description !== null) {
-    return menuItem.description[lng] || menuItem.description.en || fallback;
-  }
-  return menuItem?.description || fallback;
-};
-
 export default function OrderPage() {
   const params = useParams();
   const { lng } = params as { lng: string };

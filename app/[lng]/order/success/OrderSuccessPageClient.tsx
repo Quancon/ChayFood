@@ -6,15 +6,20 @@ import Link from 'next/link';
 import { CheckCircle, ArrowRight, Home, ShoppingBag } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Loader2 } from 'lucide-react';
-import { orderService, Order } from '../../services/orderService';
+import { orderService } from '../../../lib/services/orderService';
+import { Order as BackendOrderType, MenuItem as BackendMenuItem } from '../../../lib/services/types';
 import { useCart } from '../../hooks/useCart';
 import CartToast from '../../../components/cart-toast';
 import { useTranslation } from 'react-i18next';
 
-function getMenuItemName(menuItem: any, lng: string) {
+function getMenuItemName(menuItem: string | BackendMenuItem, lng: string) {
+  if (typeof menuItem === 'string') {
+    return menuItem; // If it's just the ID, return it as a fallback for display
+  }
+  // Now menuItem is BackendMenuItem or a similar object
   if (!menuItem) return '';
   if (typeof menuItem.name === 'object') {
-    return menuItem.name[lng] || menuItem.name.en || '';
+    return (menuItem.name as Record<string, string>)[lng] || (menuItem.name as Record<string, string>).en || '';
   }
   return menuItem.name || '';
 }
@@ -28,7 +33,7 @@ export default function OrderSuccessPageClient() {
   const sessionId = searchParams.get('session_id');
   const { t } = useTranslation();
 
-  const [order, setOrder] = useState<Order | null>(null);
+  const [order, setOrder] = useState<BackendOrderType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { clearCart, message, hasMessage, dismissMessage } = useCart();
@@ -51,7 +56,7 @@ export default function OrderSuccessPageClient() {
           data = await orderService.getById(orderId);
         }
         if (data) {
-          setOrder(data);
+          setOrder(data as BackendOrderType);
           if (!clearedRef.current) {
             await clearCart();
             clearedRef.current = true;

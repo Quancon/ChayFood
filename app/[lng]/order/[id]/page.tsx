@@ -119,21 +119,31 @@ const PaymentMethodBadge = ({ method, t }: { method: string; t: TFunction }) => 
 };
 
 // Interface for order item with menuItemDetails
+interface EmbeddedMenuItem {
+  _id: string;
+  name: string | Record<string, string>;
+  image?: string | null;
+}
+
 interface OrderItem {
-  menuItem: string;
+  menuItem: string | EmbeddedMenuItem;
   quantity: number;
   price: number;
   specialInstructions?: string;
   menuItemDetails?: {
     name: string;
-    image?: string;
+    image?: string | null;
   };
 }
 
-function getMenuItemName(menuItemDetails: any, lng: string) {
+interface MenuItemWithName { // Define a minimal interface for objects with a 'name' property
+  name: string | Record<string, string>;
+}
+
+function getMenuItemName(menuItemDetails: MenuItemWithName | null | undefined, lng: string) {
   if (!menuItemDetails) return '';
   if (typeof menuItemDetails.name === 'object') {
-    return menuItemDetails.name[lng] || menuItemDetails.name.en || '';
+    return (menuItemDetails.name as Record<string, string>)[lng] || (menuItemDetails.name as Record<string, string>).en || '';
   }
   return menuItemDetails.name || '';
 }
@@ -166,38 +176,48 @@ export default function OrderDetailsPage() {
         setLoading(true);
         const response = await orderService.getById(id);
         if (response && response.status === 'success' && response.data) {
-          let orderData = response.data;
+          const orderData = response.data;
           // Hydrate menu item details
           if (orderData.items && Array.isArray(orderData.items)) {
             const hydratedItems = await Promise.all(
-              orderData.items.map(async (item: any) => {
-                // Nếu đã có name, image thì không cần gọi lại
-                if (item.menuItemDetails && item.menuItemDetails.name) return item;
-                if (typeof item.menuItem === 'object' && item.menuItem.name) {
-                  return {
-                    ...item,
-                    menuItemDetails: {
-                      name: item.menuItem.name,
-                      image: item.menuItem.image || null
-                    }
-                  };
+              orderData.items.map(async (item: OrderItem) => {
+                let currentMenuItemDetails: { name: string; image?: string | null } | null = null;
+
+                if (item.menuItemDetails && item.menuItemDetails.name) {
+                  // If details are already present and valid, use them
+                  currentMenuItemDetails = item.menuItemDetails;
+                } else if (typeof item.menuItem === 'object' && item.menuItem !== null && 'name' in item.menuItem) {
+                  // If menuItem is an embedded object, use its details
+                  const embeddedMenuItem = item.menuItem as EmbeddedMenuItem;
+                  if (embeddedMenuItem.name) {
+                    currentMenuItemDetails = {
+                      name: getMenuItemName(embeddedMenuItem, lng),
+                      image: embeddedMenuItem.image || null
+                    };
+                  }
                 }
-                const menuItemId = typeof item.menuItem === 'object' && item.menuItem._id
-                  ? item.menuItem._id
-                  : item.menuItem;
-                let menuItemDetails = null;
-                try {
-                  const menuRes = await menuService.getById(menuItemId);
-                  menuItemDetails = menuRes.data ? {
-                    name: menuRes.data.name,
-                    image: menuRes.data.image || null
-                  } : null;
-                } catch (e) {
-                  // Nếu lỗi, để null
+
+                // If menuItem is an ID or not an object with _id, fetch details
+                // This part should only execute if currentMenuItemDetails is still null after previous checks
+                if (!currentMenuItemDetails) {
+                  const menuItemId = typeof item.menuItem === 'object' && item.menuItem !== null && '_id' in item.menuItem
+                    ? (item.menuItem as EmbeddedMenuItem)._id
+                    : item.menuItem as string;
+                  try {
+                    const menuRes = await menuService.getById(menuItemId);
+                    currentMenuItemDetails = menuRes.data ? {
+                      name: menuRes.data.name,
+                      image: menuRes.data.image || null
+                    } : null;
+                  } catch {
+                    // If error, leave as null
+                    currentMenuItemDetails = null;
+                  }
                 }
+
                 return {
                   ...item,
-                  menuItemDetails,
+                  menuItemDetails: currentMenuItemDetails,
                 };
               })
             );
@@ -207,7 +227,7 @@ export default function OrderDetailsPage() {
         } else {
           setError(t('orderDetails.loadError'));
         }
-      } catch (err) {
+      } catch {
         setError(t('orderDetails.fetchError'));
       } finally {
         setLoading(false);

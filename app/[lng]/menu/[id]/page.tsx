@@ -85,7 +85,7 @@ export default function MenuItemDetail() {
     if (id) {
       fetchData()
     }
-  }, [id])
+  }, [id, t])
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -116,7 +116,7 @@ export default function MenuItemDetail() {
     
     try {
       await addToCartWithMessage(item, quantity)
-      toast.success(`${t("menuItemDetail.addedToCart", { count: quantity, itemName: (item.name as any)[lng] || item.name })}`)
+      toast.success(`${t("menuItemDetail.addedToCart", { count: quantity, itemName: itemName as string })}`)
     } catch {
       toast.error(t("menuItemDetail.addFail"))
     }
@@ -200,7 +200,7 @@ export default function MenuItemDetail() {
         <div className="relative h-[300px] md:h-[400px] w-full rounded-lg overflow-hidden">
           <Image
             src={item.image || "https://placekitten.com/400/400"}
-            alt={itemName}
+            alt={itemName as string}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
@@ -210,7 +210,7 @@ export default function MenuItemDetail() {
         {/* Thông tin chi tiết */}
         <div className="flex flex-col">
           <div className="mb-4">
-            <h1 className="text-3xl font-bold mb-2">{itemName}</h1>
+            <h1 className="text-3xl font-bold mb-2">{itemName as string}</h1>
             <div className="flex items-center mb-4">
               <div className="flex items-center mr-4">
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -230,7 +230,7 @@ export default function MenuItemDetail() {
               </Badge>
             </div>
             <p className="text-2xl font-bold text-primary mb-4">{item.price.toLocaleString()} VNĐ</p>
-            <p className="text-gray-700 mb-6">{itemDescription}</p>
+            <p className="text-gray-700 mb-6">{itemDescription as string}</p>
           </div>
 
           {/* Thông tin bổ sung */}
@@ -494,15 +494,15 @@ export default function MenuItemDetail() {
                   <div className="relative h-[160px] w-full overflow-hidden rounded-t-lg">
                     <Image
                       src={similarItem.image || "https://placekitten.com/400/400"}
-                      alt={(similarItem.name as any)[lng] || similarItem.name}
+                      alt={typeof similarItem.name === 'object' ? (similarItem.name as Record<string, string>)[lng] || (similarItem.name as Record<string, string>).en || '' : similarItem.name}
                       fill
                       className="object-cover"
                     />
                   </div>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold line-clamp-1">{(similarItem.name as any)[lng] || similarItem.name}</h3>
+                    <h3 className="font-semibold line-clamp-1">{typeof similarItem.name === 'object' ? (similarItem.name as Record<string, string>)[lng] || (similarItem.name as Record<string, string>).en || '' : similarItem.name}</h3>
                     <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-                      {(similarItem.description as any)[lng] || similarItem.description}
+                      {typeof similarItem.description === 'object' ? (similarItem.description as Record<string, string>)[lng] || (similarItem.description as Record<string, string>).en || '' : similarItem.description}
                     </p>
                     <p className="font-bold text-primary mt-2">{similarItem.price.toLocaleString()} VNĐ</p>
                   </CardContent>
