@@ -1,6 +1,6 @@
 'use client';
 
-import { useCart } from '../[lng]/hooks/useCart';
+import { useCart } from '../[lng]/(default)/hooks/useCart';
 import { useState } from 'react';
 
 export default function CartDebug() {

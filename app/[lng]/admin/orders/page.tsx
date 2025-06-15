@@ -1,18 +1,32 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { orderService, Order } from '../../services/orderService'
+import { orderService } from '@/[lng]/(default)/services/orderService'
+import { userService, UserProfile } from '@/[lng]/(default)/services/userService'
+import Link from 'next/link'
+import { Order } from '@/lib/services/types'
+
+// Add UserProfile type definition if not globally available
+// For demonstration, let's assume it looks like this. 
+// In a real app, this should be in a shared types file.
+// export interface UserProfile {
+//   _id: string;
+//   name: string;
+//   email: string;
+// }
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
+  const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({})
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState('')
 
-  // Fetch orders based on current filters
+  // Fetch orders and associated user data
   const fetchOrders = useCallback(async () => {
     setLoading(true)
+    setError('')
     try {
       let result: Order[] = []
       
@@ -25,50 +39,82 @@ export default function OrdersPage() {
       }
       
       setOrders(result)
-      setError('')
+
+      // Extract unique user IDs from orders
+      const userIds = result
+        .map(order => order.user)
+        .filter((user): user is string => typeof user === 'string')
+      
+      const uniqueUserIds = Array.from(new Set(userIds));
+      
+      // Fetch profiles for users not already fetched
+      const newUserIds = uniqueUserIds.filter(id => !userProfiles[id]);
+      if (newUserIds.length > 0) {
+        const fetchedProfiles = await Promise.all(
+          newUserIds.map(id => userService.getUserById(id).catch(err => {
+            console.error(`Failed to fetch user ${id}:`, err);
+            return null; // Return null on error to not break Promise.all
+          }))
+        );
+
+        const newProfiles: Record<string, UserProfile> = { ...userProfiles };
+        fetchedProfiles.forEach(profile => {
+          if (profile) {
+            newProfiles[profile._id] = profile;
+          }
+        });
+        setUserProfiles(newProfiles);
+      }
+      
     } catch (err: unknown) {
       console.error('Failed to fetch orders:', err)
       setError('Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.')
     } finally {
       setLoading(false)
     }
-  }, [statusFilter, searchQuery])
+  }, [statusFilter, searchQuery, userProfiles]) // Added userProfiles to dependency array
 
-  // Fetch orders on component mount
+  // Initial fetch
   useEffect(() => {
     fetchOrders()
-  }, [fetchOrders])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, searchQuery]) // fetchOrders is not included to avoid re-running on userProfiles change
 
   // Handle status change
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSearchQuery(''); // Clear search when filtering
     setStatusFilter(e.target.value)
-    setTimeout(() => {
-      fetchOrders()
-    }, 100)
   }
 
-  // Handle search input
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
-    if (e.target.value === '') {
-      setTimeout(() => {
-        fetchOrders()
-      }, 100)
-    }
   }
 
-  // Handle search submit
+  // Handle search form submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setStatusFilter(''); // Clear filter when searching
     fetchOrders()
   }
 
-  // Format date
+  // Format date for display
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN')
   }
 
-  // Get status display
+  // Get customer name from order, falling back to profile
+  const getCustomerName = (order: Order): string => {
+    if (typeof order.user === 'object' && order.user !== null && 'name' in order.user) {
+      return order.user.name || 'Khách hàng';
+    } 
+    if (typeof order.user === 'string' && userProfiles[order.user]) {
+      return userProfiles[order.user].name || 'Khách hàng';
+    }
+    return 'Khách hàng';
+  }
+
+  // Get status display properties
   const getStatusDisplay = (status: Order['status']) => {
     const statusMap: Record<Order['status'], { label: string, className: string }> = {
       'pending': { label: 'Đang xử lý', className: 'bg-yellow-100 text-yellow-800' },
@@ -82,53 +128,59 @@ export default function OrdersPage() {
     return statusMap[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
   }
 
-  // Handle cancel order
+  // Handle cancelling an order
   const handleCancelOrder = async (orderId: string) => {
     if (window.confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
       const success = await orderService.cancelOrder(orderId);
       if (success) {
+        // Refresh orders list
         fetchOrders();
+      } else {
+        alert('Không thể hủy đơn hàng. Vui lòng thử lại.');
       }
     }
   }
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">Quản lý đơn hàng</h1>
-        <div className="flex gap-4">
-          <form onSubmit={handleSearchSubmit} className="flex">
+      </div>
+      
+      <div className="flex justify-between items-center mb-4 p-4 bg-gray-50 rounded-lg">
+          <form onSubmit={handleSearchSubmit} className="flex-grow flex gap-2">
             <input
               type="text"
               value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Tìm kiếm đơn hàng..."
-              className="px-4 py-2 border rounded-lg"
+              onChange={handleSearchChange}
+              placeholder="Tìm theo mã, tên, email..."
+              className="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             />
-            <button type="submit" className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded-lg">
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
               Tìm
             </button>
           </form>
-          <select 
-            className="px-4 py-2 border rounded-lg"
-            value={statusFilter}
-            onChange={handleStatusChange}
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="pending">Đang xử lý</option>
-            <option value="confirmed">Đã xác nhận</option>
-            <option value="preparing">Đang chuẩn bị</option>
-            <option value="ready">Sẵn sàng</option>
-            <option value="delivering">Đang giao</option>
-            <option value="delivered">Đã giao</option>
-            <option value="cancelled">Đã hủy</option>
-          </select>
+          <div className="ml-4">
+            <select 
+              className="px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              value={statusFilter}
+              onChange={handleStatusChange}
+            >
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending">Đang xử lý</option>
+              <option value="confirmed">Đã xác nhận</option>
+              <option value="preparing">Đang chuẩn bị</option>
+              <option value="ready">Sẵn sàng</option>
+              <option value="delivering">Đang giao</option>
+              <option value="delivered">Đã giao</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
         </div>
-      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+          <p>{error}</p>
         </div>
       )}
 
@@ -138,41 +190,44 @@ export default function OrdersPage() {
         </div>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-6 text-center">
-          <p className="text-gray-500">Không có đơn hàng nào.</p>
+          <h3 className="text-lg font-medium">Không có đơn hàng nào</h3>
+          <p className="text-gray-500 mt-2">Không tìm thấy đơn hàng nào khớp với tìm kiếm của bạn.</p>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mã đơn hàng
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Mã ĐH
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Khách hàng
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tổng tiền
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ngày đặt
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {orders.map((order) => (
-                <tr key={order._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">#{order._id.slice(-6)}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {typeof order.user === 'object' ? order.user.name : 'Người dùng không xác định'}
+                <tr key={order._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    #{order._id.slice(-6)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {getCustomerName(order)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -180,11 +235,11 @@ export default function OrdersPage() {
                       {getStatusDisplay(order.status).label}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{formatDate(order.createdAt)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.createdAt)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-indigo-600 hover:text-indigo-900 mr-4">
+                    <Link href={`/admin/orders/${order._id}`} className="text-indigo-600 hover:text-indigo-900 mr-4">
                       Chi tiết
-                    </button>
+                    </Link>
                     {['pending', 'confirmed'].includes(order.status) && (
                       <button 
                         className="text-red-600 hover:text-red-900"

@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { PlusIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import Image from 'next/image'
-import { categoryService, Category } from '../../services/categoryService'
+import { categoryService, Category } from '../../(default)/services/categoryService'
 import { menuService } from '@/lib/services'
 import { MenuItem } from '@/lib/services/types'
 import { toast } from 'react-hot-toast'
+import Link from 'next/link'
 
 // Extended Category type to handle both old and new format
 interface ExtendedCategory extends Category {
@@ -111,18 +112,18 @@ export default function MenuPage() {
     setShowCategoryForm(true)
   }
 
-  const handleEditMenuItem = (item: MenuItem) => {
-    setEditingMenuItem(item)
-    setMenuItemFormData({
-      name: typeof item.name === 'string' ? item.name : '',
-      category: typeof item.category === 'string' ? item.category : (item.category as { _id?: string })?._id || '',
-      price: item.price,
-      description: typeof item.description === 'string' ? item.description : '',
-      image: typeof item.image === 'string' ? item.image : '',
-      isAvailable: item.isAvailable
-    })
-    setShowAddForm(true)
-  }
+  // const handleEditMenuItem = (item: MenuItem) => {
+  //   setEditingMenuItem(item)
+  //   setMenuItemFormData({
+  //     name: typeof item.name === 'string' ? item.name : '',
+  //     category: typeof item.category === 'string' ? item.category : (item.category as { _id?: string })?._id || '',
+  //     price: item.price,
+  //     description: typeof item.description === 'string' ? item.description : '',
+  //     image: typeof item.image === 'string' ? item.image : '',
+  //     isAvailable: item.isAvailable
+  //   })
+  //   setShowAddForm(true)
+  // }
 
   // Reset category form
   const resetCategoryForm = () => {
@@ -201,6 +202,31 @@ export default function MenuPage() {
     }
   }
 
+  // Get item name based on language
+  const getItemName = (item: MenuItem): string => {
+    if (typeof item.name === 'string') {
+      return item.name;
+    } else if (typeof item.name === 'object' && item.name !== null) {
+      return item.name.vi || item.name.en || '';
+    }
+    return '';
+  }
+
+  // Get item description based on language
+  const getItemDescription = (item: MenuItem): string => {
+    if (typeof item.description === 'string') {
+      return item.description;
+    } else if (typeof item.description === 'object' && item.description !== null) {
+      return item.description.vi || item.description.en || '';
+    }
+    return '';
+  }
+
+  // Format price in VND
+  const formatPrice = (price: number): string => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  }
+
   // Filter menu items based on selected category
   const filteredItems = selectedCategory === 'all' 
     ? menuItems 
@@ -218,13 +244,13 @@ export default function MenuPage() {
     <div className="container mx-auto px-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">Quản lý thực đơn</h1>
-        <button 
-          onClick={() => setShowAddForm(true)}
+        <Link 
+          href="/admin/menu/create"
           className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 flex items-center gap-2"
         >
           <PlusIcon className="h-5 w-5" />
           Thêm món mới
-        </button>
+        </Link>
       </div>
 
       {/* Category Management */}
@@ -416,7 +442,7 @@ export default function MenuPage() {
             <div className="aspect-w-16 aspect-h-9 bg-gray-200">
               <Image
                 src={typeof item.image === 'string' ? item.image : ''}
-                alt={typeof item.name === 'string' ? item.name : ''}
+                alt={getItemName(item)}
                 width={640}
                 height={360}
                 className="w-full h-48 object-cover"
@@ -424,10 +450,10 @@ export default function MenuPage() {
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-lg">{typeof item.name === 'string' ? item.name : ''}</h3>
-                <span className="font-medium text-green-600">${item.price.toFixed(2)}</span>
+                <h3 className="font-semibold text-lg">{getItemName(item)}</h3>
+                <span className="font-medium text-green-600">{formatPrice(item.price)}</span>
               </div>
-              <p className="text-gray-600 text-sm mb-4">{typeof item.description === 'string' ? item.description : ''}</p>
+              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{getItemDescription(item)}</p>
               <div className="flex items-center justify-between">
                 <span className={`px-2 py-1 rounded-full text-xs ${
                   item.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -445,12 +471,12 @@ export default function MenuPage() {
                   >
                     {item.isAvailable ? 'Đánh dấu hết' : 'Đánh dấu còn'}
                   </button>
-                  <button 
-                    onClick={() => handleEditMenuItem(item)}
+                  <Link 
+                    href={`/admin/menu/edit/${item._id}`}
                     className="text-blue-600 hover:text-blue-700"
                   >
                     <PencilIcon className="h-5 w-5" />
-                  </button>
+                  </Link>
                   <button 
                     onClick={() => handleDeleteMenuItem(item._id)}
                     className="text-red-600 hover:text-red-700"

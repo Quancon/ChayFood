@@ -8,7 +8,7 @@ import {
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
-import { getStripe } from '../../lib/stripe';
+import { getStripe } from '@/lib/stripe';
 import { Button } from '../ui/button';
 import { toast } from 'react-hot-toast';
 

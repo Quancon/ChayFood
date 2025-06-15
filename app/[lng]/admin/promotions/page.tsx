@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react';
-import { useApi } from '../../hooks/useApi';
+import { useApi } from '../../(default)/hooks/useApi';
 import { promotionService } from '../../../lib/services';
 import { Promotion } from '../../../lib/services/types';
 import { PlusIcon, FunnelIcon, TagIcon, BoltIcon } from '@heroicons/react/24/outline';

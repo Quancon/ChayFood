@@ -7,8 +7,8 @@ import CustomerStats from '@/components/admin/analytics/CustomerStats';
 import PopularDishesChart from '@/components/admin/analytics/PopularDishesChart';
 import OrderTrendsChart from '@/components/admin/analytics/OrderTrendsChart';
 import RegionalOrdersMap from '@/components/admin/analytics/RegionalOrdersMap';
-import { AnalyticsProvider, useAnalytics } from '@/[lng]/context/AnalyticsContext';
-import { analyticsService } from '@/[lng]/services/analyticsService';
+import { AnalyticsProvider, useAnalytics } from '@/[lng]/(default)/context/AnalyticsContext';
+import { analyticsService } from '@/[lng]/(default)/services/analyticsService';
 
 // Immediate debug logs at module-level
 console.log('DEBUG: Analytics page is being imported');

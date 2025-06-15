@@ -136,17 +136,41 @@ export const authService = {
   
   resetPassword: async (token: string, newPassword: string) => {
     try {
+      console.log('authService.resetPassword called with token:', token);
       const response = await api.post('/auth/reset-password', { 
         token, 
         newPassword 
       });
+      console.log('Reset password API response:', response.data);
       return { 
         success: true, 
         message: response.data.message || 'Mật khẩu đã được đặt lại thành công.' 
       };
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error resetting password:', error);
-   
+      // Extract error message from response if available
+      let errorMessage = 'Không thể đặt lại mật khẩu. Vui lòng thử lại.';
+      
+      // Type guard for axios error
+      if (
+        error && 
+        typeof error === 'object' && 
+        'response' in error && 
+        error.response && 
+        typeof error.response === 'object' && 
+        'data' in error.response && 
+        error.response.data && 
+        typeof error.response.data === 'object' && 
+        'message' in error.response.data && 
+        typeof error.response.data.message === 'string'
+      ) {
+        errorMessage = error.response.data.message;
+      }
+      
+      return {
+        success: false,
+        message: errorMessage
+      };
     }
   },
   

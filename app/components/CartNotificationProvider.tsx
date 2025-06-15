@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import CartToast from './cart-toast';
-import { useCart } from '../[lng]/hooks/useCart';
+import { useCart } from '../[lng]/(default)/hooks/useCart';
 
 export default function CartNotificationProvider({ children }: { children: React.ReactNode }) {
   const { message, hasMessage, dismissMessage } = useCart();

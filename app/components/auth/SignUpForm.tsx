@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 import axios from 'axios'
 import { useForm } from 'react-hook-form'
-import { authService } from '@/lib/services'
+import { authService } from '@/lib/services/authService'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 
