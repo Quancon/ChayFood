@@ -1,6 +1,6 @@
 'use client';
 
-import { useAnalytics } from '@/[lng]/context/AnalyticsContext';
+import { useAnalytics } from '@/[lng]/(default)/context/AnalyticsContext';
 
 export default function OrderTrendsChart() {
   const { orderTrends, isLoading, error } = useAnalytics();
@@ -50,8 +50,8 @@ export default function OrderTrendsChart() {
         
         {/* Chart area */}
         <div className="flex-1 flex">
-          {orderTrends.map((day) => (
-            <div key={day.date} className="flex-1 flex flex-col">
+          {orderTrends.map((day, index) => (
+            <div key={`day-${index}`} className="flex-1 flex flex-col">
               <div className="flex-1 flex items-end relative">
                 {/* Revenue line point */}
                 <div 

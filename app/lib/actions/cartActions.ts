@@ -1,6 +1,6 @@
 'use client';
 
-import { cartService } from '../../[lng]/services/cartService';
+import { cartService } from '../../[lng]/(default)/services/cartService';
 import { MenuItem } from '../services/types';
 
 export interface CartItem {

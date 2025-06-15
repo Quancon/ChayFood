@@ -4,26 +4,24 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  ChartBarIcon,
   ClipboardDocumentListIcon,
   Cog8ToothIcon,
   HomeIcon,
   UsersIcon,
   ShoppingBagIcon,
-  BanknotesIcon,
   TagIcon,
   ArrowRightOnRectangleIcon,
 } from '@heroicons/react/24/outline';
-import { useAuth } from '../../[lng]/context/AuthContext';
+import { useAuth } from '@/[lng]/(default)/context/AuthContext';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: HomeIcon },
+  { name: 'Dashboard', href: '/admin/analytics', icon: HomeIcon },
   { name: 'Orders', href: '/admin/orders', icon: ClipboardDocumentListIcon },
   { name: 'Menu', href: '/admin/menu', icon: ShoppingBagIcon },
   { name: 'Promotions', href: '/admin/promotions', icon: TagIcon },
   { name: 'Customers', href: '/admin/customers', icon: UsersIcon },
-  { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon },
-  { name: 'Revenue', href: '/admin/revenue', icon: BanknotesIcon },
+  // { name: 'Analytics', href: '/admin/analytics', icon: ChartBarIcon },
+  // { name: 'Revenue', href: '/admin/revenue', icon: BanknotesIcon },
   { name: 'Settings', href: '/admin/settings', icon: Cog8ToothIcon },
 ];
 

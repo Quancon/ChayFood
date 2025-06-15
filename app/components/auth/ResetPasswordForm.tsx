@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '../../[lng]/context/AuthContext';
+import { useAuth } from '@/[lng]/(default)/context/AuthContext';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -17,7 +17,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '../ui/alert';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 
 interface ResetPasswordFormProps {
@@ -52,8 +52,7 @@ export default function ResetPasswordForm({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const resetToken = tokenFromProps || searchParams.get('token');
+  const resetToken = tokenFromProps;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,17 +63,23 @@ export default function ResetPasswordForm({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log('Form submitted, current token:', resetToken);
+    
     if (!resetToken) {
+      console.log('No token available at form submission');
       setError(t('resetPasswordForm.invalidToken'));
       return;
     }
 
+    console.log('Submitting form with token:', resetToken);
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
+      console.log('Calling resetPassword with token:', resetToken);
       const result = await resetPassword(resetToken, values.password);
+      console.log('Reset password result:', result);
       if (result.success) {
         setSuccess(result.message);
         form.reset();
@@ -89,7 +94,8 @@ export default function ResetPasswordForm({
       } else {
         setError(result.message);
       }
-    } catch {
+    } catch (error) {
+      console.error('Reset password error:', error);
       setError(t('resetPasswordForm.genericError'));
     } finally {
       setIsLoading(false);

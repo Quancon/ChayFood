@@ -5,8 +5,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserIcon } from '@heroicons/react/24/outline'
-import { useCart } from '../[lng]/hooks/useCart'
-import { useAuth } from '../[lng]/context/AuthContext'
+import { useCart } from '@/[lng]/(default)/hooks/useCart'
+import { useAuth } from '@/[lng]/(default)/context/AuthContext'
 import MobileNav from './MobileNav'
 import AuthModal from './auth/AuthModal'
 import LanguageChanger from './LanguageChanger'
@@ -77,7 +77,7 @@ export default function Navbar({ lng }: { lng: string }) {
     }
   }, [showUserMenu])
   
-  if (pathname?.startsWith('/admin')) {
+  if (pathname?.startsWith(`/${lng}/admin`)) {
     return null
   }
   

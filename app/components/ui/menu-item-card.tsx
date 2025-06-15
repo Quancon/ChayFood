@@ -3,15 +3,15 @@
 import Image from "next/image"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { useCart } from "@/[lng]/hooks/useCart"
+import { useCart } from "@/[lng]/(default)/hooks/useCart"
 import { MenuItem } from "@/lib/services/types"
 import { cn } from "@/lib/utils"
 import { ShoppingCart, Eye } from "lucide-react"
-import { useAuth } from "../../[lng]/context/AuthContext"
+import { useAuth } from "@/[lng]/(default)/context/AuthContext"
 import React, { useState } from "react"
 import { toast } from "react-hot-toast"
 import Link from "next/link"
-import { useTranslation } from "../../i18n/client"
+import { useTranslation } from "@/i18n/client"
 
 interface MenuItemCardProps {
   item: MenuItem

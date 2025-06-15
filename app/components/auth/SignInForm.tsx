@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useAuth } from '@/[lng]/context/AuthContext'
+import { useAuth } from '@/[lng]/(default)/context/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next';
 

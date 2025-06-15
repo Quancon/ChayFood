@@ -20,41 +20,44 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## ChayFood Front-end Features
+## ✨ ChayFood Project Features
 
-### Shopping Cart System
-- **Server-side Cart Storage**: All cart data is stored on the server for persistence and data integrity
-- **Robust Error Handling**: The cart handles edge cases including server errors and item validation
-- **Real-time Cart Updates**: Cart changes are reflected immediately across the application
-- **Notes Feature**: Users can add special instructions to individual items
-- **Vietnamese Localization**: Cart interface supports Vietnamese language
-- **Currency Formatting**: Prices display correctly in Vietnamese Dong (VND)
+This project is a full-stack food ordering platform built with Next.js, featuring a comprehensive set of functionalities for both customers and administrators.
 
-### Cart API Integration
-The front-end connects to the ChayFood API for cart operations:
-- `GET /cart`: Retrieve user's cart
-- `POST /cart/items`: Add items to cart
-- `PUT /cart/items/:cartItemId`: Update cart items
-- `DELETE /cart/items/:cartItemId`: Remove items from cart
-- `DELETE /cart`: Clear entire cart
+### 👤 Customer-Facing Features
 
-The cart system uses server actions and React hooks for state management.
+*   **Multi-language Support (i18n)**: Fully localized for Vietnamese (vi) and English (en) with automatic language detection and a language switcher.
+*   **Menu Browsing**: Users can browse menu items, which are organized into categories (Main Dishes, Side Dishes, Desserts, Beverages).
+*   **Authentication**: Secure user sign-in and sign-up functionality. Includes a complete password reset flow via email.
+*   **Shopping Cart System**:
+    *   **Persistent Cart**: Cart state is saved on the server, allowing users to continue their order across sessions.
+    *   **Real-time Updates**: Add, remove, and update item quantities with immediate feedback.
+    *   **Item Notes**: Add special instructions for individual items in the cart.
+*   **Checkout Process**: A streamlined process for users to place their orders.
+*   **Account Management**: Users can view their profile, order history, and manage subscriptions.
+*   **AI Chat Agent**: An integrated chatbot powered by a Hugging Face model to answer user questions about the menu.
 
-### Analytics Dashboard
-- **Real-time Business Metrics**: Interactive charts for revenue, orders, and customer data
-- **Date Range Filtering**: Filter analytics by day, week, month, quarter, year, or custom range
-- **Regional Analysis**: Filter data by North, Central, and South Vietnam regions
-- **Best-selling Items**: Track popularity of menu items with quantity and revenue metrics
-- **Order Tracking**: Detailed table view of recent orders with status and filtering
-- **Responsive Design**: Dashboard adapts to all screen sizes
+### 🛠️ Admin Dashboard
 
-#### Analytics API Integration
-The dashboard connects to the ChayFood API for analytics:
-- `GET /api/analytics/orders/stats`: Get order statistics with filtering options
-- `GET /api/analytics/orders/trends`: Get order trend data over time
-- `GET /api/analytics/customers/stats`: Get customer statistics
-- `GET /api/analytics/dishes/popular`: Get popular dish rankings
-- `GET /api/analytics/orders/regional`: Get regional order distribution
+A protected, role-based admin panel for managing the restaurant's operations.
+
+*   **Comprehensive Analytics**:
+    *   **Real-time Metrics**: Interactive charts displaying revenue, order volume, and new customer data.
+    *   **Advanced Filtering**: Filter analytics by various date ranges (day, week, month, year) and by region.
+    *   **Performance Tracking**: Identify best-selling items based on quantity and revenue.
+*   **Menu Management (CRUD)**:
+    *   Full control to create, view, update, and delete menu items.
+    *   **Bilingual Content**: Manage item names and descriptions in both Vietnamese and English.
+    *   **Detailed Item Attributes**: Manage price, categories, images, availability, ingredients, nutritional information, allergens, spicy level, and more.
+*   **Order Management**: View and manage incoming orders with a detailed table view and status tracking.
+
+### ⚙️ Technical Features
+
+*   **Next.js 14 App Router**: Utilizes the latest features of Next.js for a modern, robust architecture, including Route Groups for layouts.
+*   **Server Actions**: Implements mutations and data fetching using secure server-side logic.
+*   **Role-Based Access Control (RBAC)**: Middleware protects admin routes, ensuring only authorized users can access the dashboard.
+*   **API Integration**: The front-end communicates with a separate Node.js/Express backend for data persistence.
+*   **Component-Based UI**: Built with React, TypeScript, and Tailwind CSS for a scalable and maintainable user interface.
 
 ## Learn More
 

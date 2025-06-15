@@ -1,6 +1,6 @@
 'use client';
 
-import { useAnalytics } from '@/[lng]/context/AnalyticsContext';
+import { useAnalytics } from '@/[lng]/(default)/context/AnalyticsContext';
 
 export default function OrderStatistics() {
   const { orderStats, isLoading, error } = useAnalytics();

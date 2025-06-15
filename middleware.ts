@@ -39,28 +39,26 @@ export function middleware(req: NextRequest) {
   // Get the pathname of the request
   const pathname = req.nextUrl.pathname;
 
-  // Only process the root path '/' or language-prefixed root
-  if (pathname === `/${lng}` || pathname === '/') {
-    // Get the auth token from cookies
-    const authToken = req.cookies.get('authToken')?.value;
-    
-    // Check if there's a current user cookie that contains role information
-    const currentUserCookie = req.cookies.get('currentUser')?.value;
-    let isAdmin = false;
-    
-    if (currentUserCookie) {
-      try {
-        const userData = JSON.parse(currentUserCookie);
-        isAdmin = userData.role === 'admin';
-      } catch (error) {
-        console.error('Error parsing currentUser cookie:', error);
-      }
+  // Get the auth token from cookies
+  const authToken = req.cookies.get('authToken')?.value;
+  
+  // Check if there's a current user cookie that contains role information
+  const currentUserCookie = req.cookies.get('currentUser')?.value;
+  let isAdmin = false;
+  
+  if (currentUserCookie) {
+    try {
+      const userData = JSON.parse(currentUserCookie);
+      isAdmin = userData.role === 'admin';
+    } catch (error) {
+      console.error('Error parsing currentUser cookie:', error);
     }
-    
-    // If the user is authenticated and is an admin, redirect to admin dashboard
-    if (authToken && isAdmin) {
-      return NextResponse.redirect(new URL(`/${lng}/admin`, req.url));
-    }
+  }
+  
+  // If the user is authenticated and is an admin, redirect to the admin dashboard
+  // This check should run on all page navigations to ensure admins are always on the correct dashboard
+  if (authToken && isAdmin && !pathname.startsWith(`/${lng}/admin`)) {
+    return NextResponse.redirect(new URL(`/${lng}/admin`, req.url));
   }
 
   return NextResponse.next()
